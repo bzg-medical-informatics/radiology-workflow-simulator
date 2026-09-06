@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import datetime
 import shutil
 
 from flask import render_template, request, session
@@ -21,6 +22,7 @@ except ImportError:
 
 try:
     from deps import (
+        _dicom_log_append,
         _load_patients,
         _load_reports,
         _patient_exists,
@@ -29,6 +31,7 @@ try:
     )
 except ImportError:
     from .deps import (
+    _dicom_log_append,
     _load_patients,
     _load_reports,
     _patient_exists,
@@ -93,9 +96,11 @@ def create_order():
 @bp.route('/modality')
 def modality():
     items = perform_c_find_mwl()
+    _dicom_log_append('C-FIND (MWL)', True, f'{len(items)} Worklist-Eintrag(e)')
     return render_template(
         'modality.html',
         items=items,
+        worklist_refreshed_at=datetime.datetime.now().strftime('%H:%M:%S'),
         workflow_current="4. DICOM C-FIND (MWL): Worklist abrufen",
         workflow_next="5. DICOM C-STORE: Bilder senden → PACS",
     )
@@ -141,18 +146,22 @@ def scan():
 
         if summary.get('ok', 0) > 0:
             _update_patient_last_exam(code, pid, accession_number=acc, status='Untersuchung abgeschlossen')
+        _dicom_log_append('C-STORE', summary.get('ok', 0) > 0, f"gesendet={summary['sent']}, ok={summary['ok']}, fehlgeschlagen={summary['failed']}")
     else:
         status = send_c_store(name, pid, acc)
         msg = f"☢️ Dummy-Scan für {name}. (Hinweis: Für echte Daten bitte DICOM-Dateien hochladen.) Status: {status}."
 
-        if status and getattr(status, 'Status', None) == 0x0000:
+        ok = bool(status and getattr(status, 'Status', None) == 0x0000)
+        if ok:
             _update_patient_last_exam(code, pid, accession_number=acc, status='Untersuchung abgeschlossen')
+        _dicom_log_append('C-STORE', ok, f'Dummy-Scan, Status={status}')
 
     items = perform_c_find_mwl()
     return render_template(
         'modality.html',
         items=items,
         msg=msg,
+        worklist_refreshed_at=datetime.datetime.now().strftime('%H:%M:%S'),
         workflow_current="5. DICOM C-STORE: Bilder senden → PACS",
         workflow_next="6. DICOM C-FIND (Study): Workstation ↔ PACS (Studien suchen)",
     )

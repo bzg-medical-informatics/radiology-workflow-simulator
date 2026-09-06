@@ -23,6 +23,7 @@ from pydicom.dataset import Dataset
 
 try:
     from deps import (
+        _dicom_log_append,
         _load_reports,
         _received_images_for_code,
         _received_study_groups,
@@ -33,6 +34,7 @@ try:
     )
 except ImportError:
     from .deps import (
+    _dicom_log_append,
     _load_reports,
     _received_images_for_code,
     _received_study_groups,
@@ -51,6 +53,7 @@ except ImportError:
 @bp.route('/viewer')
 def viewer():
     studies = _query_studies()
+    _dicom_log_append('C-FIND (Study Root)', True, f'{len(studies)} Studie(n) gefunden')
     code = get_student_code()
     received = _received_images_for_code(code)
     return render_template(
@@ -171,10 +174,14 @@ def retrieve():
             # C-MOVE to 'SIMULATOR' (our AE Title)
             # Orthanc must know 'SIMULATOR' in DicomModalities config!
             responses = assoc.send_c_move(ds, b'SIMULATOR', query_model=sop_class.StudyRootQueryRetrieveInformationModelMove)
+            move_ok = True
+            last_status = None
             for (status, identifier) in responses:
                 if status:
+                    last_status = status.Status
                     print(f"C-MOVE Status: 0x{status.Status:04x}")
             assoc.release()
+            _dicom_log_append('C-MOVE', move_ok, f'StudyUID={study_uid}, letzter Status=0x{last_status:04x}' if last_status is not None else f'StudyUID={study_uid}')
 
             # Gate: once the user has triggered C-MOVE for this StudyInstanceUID,
             # allow opening the PACS viewer/metadata links from the Workstation list.
@@ -198,6 +205,7 @@ def retrieve():
         )
 
     except Exception as e:
+        _dicom_log_append('C-MOVE', False, f'StudyUID={study_uid} ({e})')
         studies = _query_studies()
         return render_template(
             'viewer.html',

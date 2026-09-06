@@ -108,7 +108,14 @@ Hinweis: Das sind Musterlösungen. Je nach Daten (PID, Kreatinin, DICOM-Dateien)
 - **Welche Nummer ist für die Zuordnung Auftrag <-> Worklist besonders wichtig (Stichwort: Accession)?**
   - Die **AccessionNumber** (DICOM (0008,0050)) bzw. die Auftragsnummer aus HL7.
 
-## Fehlerfall B: C-MOVE ohne Empfang (Cache bleibt leer)
+## Fehlerfall B: C-ECHO schlägt fehl (simuliert)
+
+- **Woran erkennst du im Log, dass dieser Versuch fehlgeschlagen ist?**
+  - Der Eintrag im **DICOM Protokoll-Log** zeigt "Fehler" statt "OK", und die Detailspalte nennt den (simulierten) falschen Port bzw. "Association gescheitert".
+- **Plausible Ursache in echt:**
+  - Falscher Port/AE-Title, Netzwerkproblem, Firewall, oder der DICOM-Dienst auf der Gegenseite läuft nicht.
+
+## Fehlerfall C: C-MOVE ohne Empfang (Cache bleibt leer)
 
 - **Zwei plausible Ursachen:**
   - Transfer ist noch nicht fertig (C-MOVE ist asynchron) oder Seite wurde nicht aktualisiert.

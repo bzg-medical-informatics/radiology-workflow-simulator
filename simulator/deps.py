@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import datetime
+
 from flask import session
 from typing import Optional
 
@@ -99,3 +101,23 @@ def _received_images_for_code(code: str) -> list[dict]:
 
 def _received_study_groups(received: list[dict]) -> list[dict]:
     return dicom_receiver.received_study_groups(received)
+
+
+def _dicom_log_append(action: str, ok: bool, detail: str = '') -> None:
+    """Append an entry to the session-scoped DICOM protocol log (visible on the dashboard)."""
+    log = session.get('dicom_log')
+    if not isinstance(log, list):
+        log = []
+    log.append({
+        'ts': datetime.datetime.now().strftime('%H:%M:%S'),
+        'action': action,
+        'ok': bool(ok),
+        'detail': detail,
+    })
+    session['dicom_log'] = log[-20:]
+    session.modified = True
+
+
+def _dicom_log() -> list:
+    log = session.get('dicom_log')
+    return log if isinstance(log, list) else []

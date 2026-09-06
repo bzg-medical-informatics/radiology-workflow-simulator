@@ -35,7 +35,7 @@ numbersections: true
 # Vorbereitung
 
 - App öffnen: https://orthanc.bohn-teaching.org
-- Session-Kennwort eingeben (wird vom Lehrer kommuniziert)
+- Session-Key eingeben (wird vom Lehrer kommuniziert)
 - Optional: Workflow-Panel rechts öffnen (zeigt aktuellen und nächsten Schritt)
 
 ## Zugriff auf Orthanc (PACS)
@@ -55,6 +55,7 @@ numbersections: true
 3) Notiere:
    - Was ist C-ECHO in einem Satz?
    - Welche Komponente wird hier getestet?
+4) Prüfe im Dashboard-Abschnitt **"DICOM Protokoll-Log"**, ob dein C-ECHO als "OK" oder "Fehler" eingetragen wurde.
 
 # Aufgabe 2: Verwaltung (HL7) in 3 Schritten
 
@@ -100,9 +101,8 @@ OBR|1|ACC001||CT^CT Abdomen
 
 # Aufgabe 3: Modalität (CT) holt Worklist (DICOM C-FIND / MWL)
 
-1) Wechsle zur CT-Seite.
-2) Klicke auf **Worklist abrufen (DICOM C-FIND)**.
-3) Beobachte:
+1) Wechsle zur CT-Seite. Die Modalität fragt beim Laden der Seite automatisch per **DICOM C-FIND** die Worklist ab. Mit dem Button **"Worklist aktualisieren (DICOM C-FIND)"** kannst du die Abfrage jederzeit erneut auslösen.
+2) Beobachte:
    - Welche Patientendaten kommen aus der Worklist?
    - Welche ID verknüpft Auftrag/Accession aus HL7 mit der DICOM Worklist?
 
@@ -118,8 +118,8 @@ OBR|1|ACC001||CT^CT Abdomen
 # Aufgabe 5: PACS Check – DICOM Metadaten + Viewer (gefiltert)
 
 1) Öffne im Simulator die Seite **/pacs**.
-2) Klicke bei deiner Studie auf **Metadata**.
-3) Klicke auf **Viewer**, um die Bilder anzusehen.
+2) Klicke bei deiner Studie auf **Öffnen**, dann bei einer Serie auf **Öffnen**.
+3) Klicke bei einer Instanz auf **Viewer + Tags**, um Bild und Metadaten gemeinsam zu sehen.
 4) Prüfe diese Tags:
    - (0010,0010) `PatientName`
    - (0010,0020) `PatientID`
@@ -201,7 +201,15 @@ Ziel: Ihr übt typische Situationen aus dem Alltag. Nutzt im Dashboard die Kache
    - Welche zwei Voraussetzungen müssen erfüllt sein, damit ein Worklist-Eintrag sinnvoll erscheint?
    - Welche Nummer ist für die Zuordnung Auftrag <-> Worklist besonders wichtig (Stichwort: Accession)?
 
-## Fehlerfall B: C-MOVE ohne Empfang (Cache bleibt leer)
+## Fehlerfall B: C-ECHO schlägt fehl (simuliert)
+
+1) Aktiviere im Dashboard bei "Verbindung testen (C-ECHO)" die Checkbox **"Fehler simulieren (falscher Port)"** und klicke erneut.
+2) Beobachte die Fehlermeldung und den Eintrag im **DICOM Protokoll-Log**.
+3) Notiert:
+   - Woran erkennst du im Log, dass dieser Versuch fehlgeschlagen ist?
+   - Was wäre in echt eine plausible Ursache für so einen Fehler (z.B. falscher Port/AE-Title, Netzwerk, Dienst nicht gestartet)?
+
+## Fehlerfall C: C-MOVE ohne Empfang (Cache bleibt leer)
 
 1) Startet in der Workstation ein Retrieve (C-MOVE).
 2) Wenn im Cache nichts auftaucht: Wartet kurz und aktualisiert die Workstation-Seite.
@@ -220,4 +228,6 @@ Ziel: Ihr übt typische Situationen aus dem Alltag. Nutzt im Dashboard die Kache
 - Studien suchen: ___
 - Retrieve: ___
 
-2) Was war für dich neu oder überraschend?
+2) Nutze das **Quiz** am Ende des Dashboards, um deine Zuordnung sofort zu überprüfen.
+
+3) Was war für dich neu oder überraschend?

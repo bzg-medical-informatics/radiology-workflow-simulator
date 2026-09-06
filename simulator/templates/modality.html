@@ -68,6 +68,7 @@
         .protocol-note { font-size: 0.85em; color: #455a64; font-style: italic; margin-top: 10px; }
         .msg { padding: 10px; background: #fff3e0; border-left: 5px solid #ff9800; margin: 15px 0; }
         input[type="file"] { width: 100%; }
+        .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
     <script>
@@ -274,6 +275,12 @@
     
     <h1>Modalität (CT Konsole)</h1>
     <p>Dieser Simulator simuliert eine CT-Konsole, die soeben eine <code>DICOM C-FIND</code> Anfrage an das RIS/PACS (Orthanc MWL SCP) gestellt hat, um die "Geplanten Untersuchungen" (Scheduled Procedure Steps) abzurufen.</p>
+    <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px;">
+        <a href="/modality"><button type="button" style="background:#ff9800;">Worklist aktualisieren (DICOM C-FIND)</button></a>
+        {% if worklist_refreshed_at %}
+            <span class="protocol-note">Zuletzt abgerufen: <span class="mono">{{ worklist_refreshed_at }}</span></span>
+        {% endif %}
+    </div>
 
     <input id="workflowDrawer" class="workflow-drawer-toggle" type="checkbox">
     <label class="workflow-drawer-button" for="workflowDrawer">Workflow</label>
@@ -453,7 +460,7 @@ OBR|1|{{ items[0].AccessionNumber if items else 'ACC001' }}||CT^CT Abdomen|||202
             Sobald Sie auf "SCANNEN" klicken, passiert Folgendes:
             <ul>
                 <li><strong>DICOM C-STORE:</strong> Das Gerät pusht die Bilder zum PACS (Storage Service Class).</li>
-                <li><strong>DICOM C-MOVE / C-GET:</strong> Eine Workstation würde diese verwenden, um die Bilder abzurufen (Retrieve). Hier sehen wir sie direkt im PACS (Orthanc Web Viewer).</li>
+                <li><strong>DICOM C-MOVE / C-GET:</strong> Eine Workstation verwendet dies, um die Bilder abzurufen (Retrieve). Das können Sie auf der Workstation-Seite (Aufgabe 6/7) selbst ausprobieren, oder die Bilder direkt im PACS ansehen (Orthanc Web Viewer).</li>
             </ul>
         </div>
         {% else %}

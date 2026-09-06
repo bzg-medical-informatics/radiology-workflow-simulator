@@ -15,9 +15,9 @@ except ModuleNotFoundError:
     from .simlib.students import get_student_code
 
 try:
-    from deps import _admin_user, _is_admin
+    from deps import _admin_user, _dicom_log, _is_admin
 except ImportError:
-    from .deps import _admin_user, _is_admin
+    from .deps import _admin_user, _dicom_log, _is_admin
 
 
 @bp.app_context_processor
@@ -60,6 +60,7 @@ def _inject_globals():
         'orthanc_public_url': orthanc_public_url,
         'is_admin': is_admin,
         'admin_user': _admin_user(),
+        'dicom_log': _dicom_log(),
     }
 
 

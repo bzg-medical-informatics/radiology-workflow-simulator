@@ -85,6 +85,14 @@
         .tile .tile-actions button { white-space: nowrap; }
         .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
 
+        .status-stepper { display: flex; align-items: center; gap: 4px; margin-bottom: 4px; }
+        .status-dot { width: 14px; height: 14px; border-radius: 50%; background: #cfd8dc; flex: 0 0 auto; }
+        .status-dot.done { background: #2e7d32; }
+        .status-dot.current { background: #ff9800; box-shadow: 0 0 0 3px rgba(255,152,0,0.25); }
+        .status-line { flex: 1 1 auto; height: 3px; background: #cfd8dc; min-width: 10px; }
+        .status-line.done { background: #2e7d32; }
+        .status-label { font-size: 0.8em; color: #455a64; margin-top: 2px; }
+
         .table-scroll {
             overflow: auto;
             border: 1px solid #cfd8dc;
@@ -499,10 +507,40 @@ flowchart TB
         <p>Prüfen Sie, ob das PACS erreichbar ist ("Ping").</p>
         <form action="/echo" method="post">
             <button type="submit" style="background: #28a745;">Verbindung testen (C-ECHO)</button>
+            <label style="display:inline-flex; align-items:center; gap:6px; font-weight:normal; margin-top:8px;">
+                <input type="checkbox" name="simulate_error" style="width:auto; margin-bottom:0;">
+                Fehler simulieren (falscher Port) — für Aufgabe 10 (Fehlerfall-Training)
+            </label>
         </form>
         <div class="protocol-note">
             ℹ️ <strong>Hintergrund:</strong> Der <code>DICOM C-ECHO</code> Dienste ("Verification Service Class") wird verwendet, um die TCP/IP-Verbindung und die DICOM-Aushandlung (Association) zu testen. Das ist oft der erste Schritt bei der Fehlersuche.
         </div>
+    </div>
+
+    <div class="section">
+        <h2>DICOM Protokoll-Log (diese Sitzung)</h2>
+        <p class="protocol-note">Jede DICOM-Aktion (C-ECHO, C-FIND, C-STORE, C-MOVE) wird hier mit Zeitstempel und Ergebnis protokolliert — so wird der Netzwerkverkehr sichtbar, nicht nur das Endergebnis.</p>
+        {% if dicom_log %}
+            <div class="table-scroll medium">
+                <table style="min-width: 520px;">
+                    <thead>
+                        <tr><th>Zeit</th><th>Aktion</th><th>Ergebnis</th><th>Detail</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for entry in dicom_log|reverse %}
+                            <tr>
+                                <td class="mono">{{ entry.ts }}</td>
+                                <td class="mono">{{ entry.action }}</td>
+                                <td style="color:{{ '#2e7d32' if entry.ok else '#c62828' }}; font-weight:700;">{{ 'OK' if entry.ok else 'Fehler' }}</td>
+                                <td class="protocol-note">{{ entry.detail }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="protocol-note">Noch keine DICOM-Aktionen protokolliert.</div>
+        {% endif %}
     </div>
 
     <div class="section">
@@ -711,7 +749,15 @@ flowchart TB
                                         </td>
                                         <td>
                                             {% if ex and ex.get('status') %}
-                                                {{ ex.get('status') }}
+                                                {% set stage_map = {'Auftrag freigegeben': 1, 'Untersuchung begonnen': 2, 'Untersuchung abgeschlossen': 3, 'Befundet': 4} %}
+                                                {% set stage = stage_map.get(ex.get('status'), 0) %}
+                                                <div class="status-stepper" title="{{ ex.get('status') }}">
+                                                    {% for i in range(1, 5) %}
+                                                        <span class="status-dot {{ 'done' if stage > i else ('current' if stage == i else '') }}"></span>
+                                                        {% if i < 4 %}<span class="status-line {{ 'done' if stage > i else '' }}"></span>{% endif %}
+                                                    {% endfor %}
+                                                </div>
+                                                <div class="status-label">{{ ex.get('status') }}</div>
                                                 {% if ex.get('acc') %}
                                                     <div class="protocol-note" style="margin-top:2px;">Accession: <span class="mono">{{ ex.get('acc') }}</span></div>
                                                 {% endif %}
@@ -863,6 +909,58 @@ flowchart TB
                 </div>
             </div>
         </div>
+    </div>
+
+    <div class="section">
+        <h2>Quiz: Protokolle zuordnen (Selbsttest)</h2>
+        <p class="protocol-note">Sofortiges Feedback, ohne Server-Anfrage. Passend zu Aufgabe 11 im Arbeitsblatt.</p>
+        <div id="quizHost"></div>
+        <script>
+            const QUIZ_QUESTIONS = [
+                { q: 'Patient administrativ aufnehmen', options: ['HL7 ADT', 'HL7 ORU', 'HL7 ORM', 'DICOM C-FIND'], correct: 0 },
+                { q: 'Laborbefund (z.B. Kreatinin) übertragen', options: ['HL7 ADT', 'HL7 ORU', 'DICOM C-STORE', 'DICOM C-MOVE'], correct: 1 },
+                { q: 'Radiologischen Auftrag übertragen', options: ['HL7 ORU', 'HL7 ORM', 'DICOM C-FIND', 'DICOM C-ECHO'], correct: 1 },
+                { q: 'Worklist an der Modalität abrufen', options: ['HL7 ORM', 'DICOM C-STORE', 'DICOM C-FIND', 'DICOM C-MOVE'], correct: 2 },
+                { q: 'Bilddaten an das PACS senden', options: ['DICOM C-STORE', 'DICOM C-FIND', 'DICOM C-MOVE', 'HL7 ORU'], correct: 0 },
+                { q: 'Studien im PACS suchen (Workstation)', options: ['DICOM C-STORE', 'DICOM C-MOVE', 'DICOM C-FIND (Study Root)', 'HL7 ORM'], correct: 2 },
+                { q: 'Bilder aus dem PACS anfordern (Retrieve)', options: ['DICOM C-ECHO', 'DICOM C-FIND', 'DICOM C-MOVE', 'HL7 ADT'], correct: 2 },
+            ];
+
+            function quizRender() {
+                const host = document.getElementById('quizHost');
+                if (!host) return;
+                host.innerHTML = QUIZ_QUESTIONS.map((item, qi) => `
+                    <div class="tile" style="margin-bottom:10px;">
+                        <p style="font-weight:600; margin:0 0 8px 0;">${qi + 1}) ${item.q}</p>
+                        <div class="tile-actions" style="flex-direction:column; align-items:stretch; gap:6px;">
+                            ${item.options.map((opt, oi) => `
+                                <button type="button" data-qi="${qi}" data-oi="${oi}" class="quiz-opt" style="background:#fff; color:#263238; border:1px solid #cfd8dc; text-align:left;">${opt}</button>
+                            `).join('')}
+                        </div>
+                        <div class="quiz-feedback" data-feedback-for="${qi}" style="margin-top:6px; font-weight:600;"></div>
+                    </div>
+                `).join('');
+
+                host.querySelectorAll('.quiz-opt').forEach((btn) => {
+                    btn.addEventListener('click', () => {
+                        const qi = Number(btn.getAttribute('data-qi'));
+                        const oi = Number(btn.getAttribute('data-oi'));
+                        const item = QUIZ_QUESTIONS[qi];
+                        const feedback = host.querySelector(`[data-feedback-for="${qi}"]`);
+                        if (!feedback) return;
+                        if (oi === item.correct) {
+                            feedback.textContent = '✅ Richtig!';
+                            feedback.style.color = '#2e7d32';
+                        } else {
+                            feedback.textContent = `❌ Nicht ganz — richtig wäre: ${item.options[item.correct]}`;
+                            feedback.style.color = '#c62828';
+                        }
+                    });
+                });
+            }
+
+            document.addEventListener('DOMContentLoaded', quizRender);
+        </script>
     </div>
 </body>
 </html>
