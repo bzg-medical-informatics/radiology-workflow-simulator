@@ -39,6 +39,26 @@ def _session_overview(code: str) -> dict:
     }
 
 
+def _class_summary(session_overviews: list[dict]) -> dict:
+    status_counts: dict[str, int] = {}
+    inactive = 0
+    failed = 0
+    for overview in session_overviews:
+        if not overview['last_activity']:
+            inactive += 1
+        if any(not activity.get('ok', True) for activity in overview['activities']):
+            failed += 1
+        for patient in overview['patients']:
+            status = str((patient.get('last_exam') or {}).get('status') or 'Nur aufgenommen')
+            status_counts[status] = status_counts.get(status, 0) + 1
+    return {
+        'sessions': len(session_overviews),
+        'inactive': inactive,
+        'failed': failed,
+        'status_counts': status_counts,
+    }
+
+
 @bp.route('/admin', methods=['GET'])
 def admin_home():
     if not _admin_enabled():
@@ -47,7 +67,14 @@ def admin_home():
         return render_template('admin.html', admin_enabled=True, is_admin=False)
     codes = storage.load_session_codes()
     session_overviews = [_session_overview(code) for code in codes]
-    return render_template('admin.html', admin_enabled=True, is_admin=True, codes=codes, session_overviews=session_overviews)
+    return render_template(
+        'admin.html',
+        admin_enabled=True,
+        is_admin=True,
+        codes=codes,
+        session_overviews=session_overviews,
+        class_summary=_class_summary(session_overviews),
+    )
 
 
 @bp.route('/admin/login', methods=['POST'])

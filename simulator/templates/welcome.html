@@ -2,6 +2,7 @@
 <html lang="de">
 <head>
     <title>Willkommen – Radiologie Workflow Simulator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='learning-ui.css') }}">
     <style>
         body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
         .section { background: #f0f0f0; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
@@ -12,6 +13,7 @@
 </head>
 <body>
     <h1>Willkommen</h1>
+    <p class="page-kicker">Radiologie-Workflow verstehen: Verwaltung, Bildgebung und Befundung in einer Übung.</p>
     <p class="muted">Bitte geben Sie Ihren Session-Key ein (vom Trainer). Ohne Session-Key ist der Simulator nicht zugänglich.</p>
 
     {% if msg %}

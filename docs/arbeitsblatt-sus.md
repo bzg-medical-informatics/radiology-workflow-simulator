@@ -43,6 +43,7 @@ numbersections: true
 - Die App ergänzt deine PID und AccessionNumber mit deinem SuS-Code, damit Daten verschiedener Gruppen getrennt bleiben. Aus `007` kann daher z.B. `SUS-ABC-007` werden.
 - Die StudyInstanceUID wird im Simulator für dieselbe AccessionNumber reproduzierbar erzeugt. In einem echten DICOM-Workflow erhält jede Untersuchung eine neu erzeugte, weltweit eindeutige StudyInstanceUID.
 - **Nummerierung:** Die App zeigt die technischen **Prozessschritte 1-7**: Verwaltung 1-3, Modalität 4-5, Workstation 6-7. Die Überschriften **Aufgabe 1-11** in diesem Arbeitsblatt sind dagegen Arbeitsaufträge und keine zusätzlichen Prozessschritte.
+- **Lernhilfen im Dashboard:** Der Bereich **"Geführter Lernpfad"** zeigt, welcher Schritt als Nächstes sinnvoll ist. Die **Statusspur** zeigt den Weg von Auftrag bis Befundung. Im Workflow-Panel kannst du KIS, LIS und RIS anklicken oder die Buttons **"KIS erklärt"**, **"LIS erklärt"** und **"RIS erklärt"** verwenden.
 
 ## Zugriff auf Orthanc (PACS)
 
@@ -75,6 +76,7 @@ Merksatz: **ADT = Patient**, **ORU = Labor**, **ORM = Auftrag**.
 2) Notiere:
    - Welche Eingaben sind Stammdaten?
    - Warum müssen sie später in DICOM-Tags wieder auftauchen?
+3) Öffne **"KIS erklärt"**. Notiere: Welche Daten gehen vom KIS weg und an welches System?
 
 ## Dashboard-Schritt 2: LIS - Kreatinin prüfen (HL7 QRY/ORU)
 
@@ -88,6 +90,8 @@ Merksatz: **ADT = Patient**, **ORU = Labor**, **ORM = Auftrag**.
 
 **Kommunikationsweg:** Das RIS fragt den Wert mit `HL7 QRY^Q02` beim LIS an. Das LIS antwortet mit `HL7 ORU^R01`; darin steht der Kreatininwert im Segment `OBX`.
 
+5) Öffne **"LIS erklärt"**. Vergleiche Anfrage und Antwort: Welche Information muss das RIS angeben, damit das LIS den richtigen Laborwert liefert?
+
 ## Dashboard-Schritt 3: RIS - Auftrag freigeben (HL7 ORM) + Worklist erstellen
 
 1) Trage eine Untersuchungsbeschreibung ein (z.B. `CT Abdomen mit KM`).
@@ -97,6 +101,7 @@ Merksatz: **ADT = Patient**, **ORU = Labor**, **ORM = Auftrag**.
    - Welche Auftragsnummer (Accession) wird erzeugt?
 4) HL7 Analyse:
    - Finde in der angezeigten ORM-Nachricht die Segmente `PID` und `OBR`.
+5) Öffne **"RIS erklärt"**. Notiere: Welche neue Kennung entsteht in diesem Schritt und wofür wird sie später gebraucht?
 
 Beispiel (verkürzt):
 
@@ -123,6 +128,9 @@ OBR|1|ACC001||CT^CT Abdomen
    - Wie viele Dateien wurden gesendet?
    - Gab es "skipped" oder "failed" Dateien? Was könnte der Grund sein?
    - Falls eine Warnung zu PID oder Accession erscheint: Warum wäre das eine gefährliche Verwechslung?
+5) Nutze den Bereich **"Tag-Vergleich: Upload und Worklist"**. Vergleiche `Original PatientID` und `Original Accession` mit den Worklist-Werten.
+   - Was passiert bei aktivierter Option **"Metadaten an diesen Worklist-Eintrag anpassen"**?
+   - Warum muss ein abweichender Originalwert vor dem Senden geprüft werden?
 
 # Aufgabe 5: PACS Check nach Dashboard-Schritt 5 - DICOM Metadaten + Viewer (gefiltert)
 
@@ -194,6 +202,7 @@ Ziel: Du beobachtest im Dashboard, wie sich der **Status der Untersuchung** entl
    - Nach **Untersuchung beginnen**
    - Nach **Scan / Bilder senden (DICOM C-STORE)**
    - Nach **Befund senden (HL7 ORU^R01)**
+   - Vergleiche deine Beobachtung mit der **Statusspur** im Dashboard.
 4) Notiere:
    - Welche Aktion setzt welchen Status?
    - Warum wird die Untersuchung vor dem C-STORE begonnen und erst nach erfolgreichem Versand abgeschlossen?
@@ -215,7 +224,8 @@ Ziel: Ihr übt typische Situationen aus dem Alltag. Nutzt im Dashboard die Kache
 
 1) Aktiviere im Dashboard bei "Verbindung testen (C-ECHO)" die Checkbox **"Fehler simulieren (falscher Port)"** und klicke erneut.
 2) Beobachte die Fehlermeldung und den Eintrag im **DICOM Protokoll-Log**.
-3) Notiert:
+3) Öffne das Workflow-Panel. Welche Verbindung ist rot dargestellt? Was sagt der Hinweis **"Unterbrechung erkannt"** als nächsten Schritt?
+4) Notiert:
    - Woran erkennst du im Log, dass dieser Versuch fehlgeschlagen ist?
    - Was wäre in echt eine plausible Ursache für so einen Fehler (z.B. falscher Port/AE-Title, Netzwerk, Dienst nicht gestartet)?
 
@@ -240,4 +250,6 @@ Ziel: Ihr übt typische Situationen aus dem Alltag. Nutzt im Dashboard die Kache
 
 2) Nutze das **Quiz** am Ende des Dashboards, um deine Zuordnung sofort zu überprüfen.
 
-3) Was war für dich neu oder überraschend?
+3) Vergleiche deine Session im **Geführten Lernpfad**: Welcher Schritt war am schwierigsten und warum?
+
+4) Was war für dich neu oder überraschend?

@@ -2,6 +2,7 @@
 <html lang="de">
 <head>
     <title>CT Konsole - Modality Worklist (DICOM C-FIND)</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='learning-ui.css') }}">
     <style>
         body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
         .section { background: #e0f7fa; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
@@ -279,6 +280,7 @@
     <a href="/" class="back-btn">&larr; Zurück zur Verwaltung (KIS/LIS/RIS)</a>
     
     <h1>Modalität (CT Konsole)</h1>
+    <div class="learning-step">Dashboard-Schritte 4-5: Worklist abrufen und Bilder an PACS senden</div>
 
     {% if active_patient_track %}
         <div class="patient-track">
@@ -415,6 +417,17 @@ flowchart TB
                     {% endif %}
                 {% endif %}
             </div>
+        {% endif %}
+
+        {% if upload_identifier_preview %}
+        <div class="section" style="background:#fff8e1;">
+            <h2>Tag-Vergleich: Upload und Worklist</h2>
+            <p class="protocol-note">Prüfe vor dem PACS-Check, ob die Kennungen aus der Datei zur ausgewählten Worklist passen.</p>
+            <table>
+                <thead><tr><th>Datei</th><th>Original PatientID</th><th>Original Accession</th><th>Worklist PatientID</th><th>Worklist Accession</th><th>Aktion</th></tr></thead>
+                <tbody>{% for preview in upload_identifier_preview %}<tr><td>{{ preview.filename }}</td><td class="mono">{{ preview.original_patient_id }}</td><td class="mono">{{ preview.original_accession }}</td><td class="mono">{{ preview.worklist_patient_id }}</td><td class="mono">{{ preview.worklist_accession }}</td><td>{% if preview.retagged %}Metadaten angepasst{% else %}Originalwerte gesendet{% endif %}</td></tr>{% endfor %}</tbody>
+            </table>
+        </div>
         {% endif %}
 
 

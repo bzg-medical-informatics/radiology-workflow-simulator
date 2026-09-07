@@ -2,6 +2,7 @@
 <html lang="de">
 <head>
     <title>Radiologie Workflow Simulator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='learning-ui.css') }}">
     {% set patients = patients | default([]) %}
     {% set ris_reports_by_pid = ris_reports_by_pid | default({}) %}
     {% set ris_reports = ris_reports | default([]) %}
@@ -25,31 +26,71 @@
         .workflow-phase small { display:block; margin-top:3px; font-size:0.78em; }
         .workflow-phase.is-current { border-color:#00838f; background:#e0f7fa; box-shadow:0 0 0 3px rgba(0,131,143,.12); animation:workflowPhasePulse 1.7s ease-in-out infinite; }
         .workflow-journey { display:grid; gap:8px; margin:0 0 12px; }
-        .workflow-lane { display:grid; grid-template-columns:78px 1fr; gap:8px; align-items:center; padding:8px; border-left:3px solid #90a4ae; background:#fafafa; }
+        .workflow-lane { display:grid; grid-template-columns:78px 1fr; gap:8px; align-items:center; padding:8px; border-left:3px solid #90a4ae; background:#fafafa; animation:workflowLaneEnter .45s both; }
+        .workflow-lane:nth-child(2) { animation-delay:.12s; }
+        .workflow-lane:nth-child(3) { animation-delay:.24s; }
         .workflow-lane-label { font-size:.74em; font-weight:700; color:#455a64; text-transform:uppercase; }
         .workflow-lane-steps { display:flex; align-items:stretch; min-width:0; }
-        .workflow-stage { flex:1 1 0; min-width:0; padding:6px; border:1px solid #cfd8dc; background:#fff; color:#37474f; }
+        .workflow-stage { flex:1 1 0; min-width:0; padding:6px; border:1px solid #cfd8dc; background:#fff; color:#37474f; transition:background-color .28s ease, border-color .28s ease, box-shadow .28s ease, transform .28s ease; }
         .workflow-stage-top { display:flex; align-items:center; gap:5px; font-size:.78em; font-weight:700; }
         .workflow-stage svg { width:16px; height:16px; color:#1565c0; flex:0 0 auto; }
         .workflow-stage small { display:block; margin-top:2px; font-size:.7em; line-height:1.2; }
-        .workflow-stage.is-current { border-color:#00838f; background:#e0f7fa; color:#004d40; box-shadow:inset 0 0 0 1px #00838f; animation:workflowStagePulse 1.5s ease-in-out infinite; }
+        .workflow-stage.is-current { border-color:#00838f; background:#e0f7fa; color:#004d40; box-shadow:inset 0 0 0 1px #00838f; animation:workflowStagePulse 1.5s ease-in-out infinite; transform:translateY(-2px); }
+        .workflow-stage.is-current svg { animation:workflowIconSignal 1.1s ease-in-out infinite; }
         .workflow-flow { position:relative; flex:0 0 28px; min-height:42px; overflow:hidden; background:linear-gradient(#78909c,#78909c) center / 100% 2px no-repeat; }
         .workflow-flow::after { content:'›'; position:absolute; right:0; top:50%; transform:translateY(-54%); color:#546e7a; font-size:19px; font-weight:700; }
         .workflow-packet { position:absolute; width:7px; height:7px; top:calc(50% - 3px); left:-8px; border-radius:50%; background:#00838f; box-shadow:0 0 0 3px rgba(0,131,143,.16); animation:workflowPacket 1.8s linear infinite; }
         .workflow-flow:nth-of-type(2) .workflow-packet { animation-delay:.6s; }
         .workflow-flow.dicom .workflow-packet { background:#2e7d32; box-shadow:0 0 0 3px rgba(46,125,50,.16); }
         .workflow-flow.hl7 .workflow-packet { background:#ef6c00; box-shadow:0 0 0 3px rgba(239,108,0,.16); }
-        .workflow-data-caption { display:flex; gap:8px; align-items:flex-start; margin:0 0 12px; padding:9px; border-left:3px solid #00838f; background:#e0f7fa; color:#004d40; font-size:.84em; line-height:1.35; }
+        .workflow-data-caption { display:flex; gap:8px; align-items:flex-start; margin:0 0 12px; padding:9px; border-left:3px solid #00838f; background:#e0f7fa; color:#004d40; font-size:.84em; line-height:1.35; animation:workflowCaptionIn .35s ease-out; }
         .workflow-data-caption svg { width:18px; height:18px; flex:0 0 auto; margin-top:1px; }
         .workflow-data-caption strong { display:block; margin-bottom:2px; }
+        .workflow-id-ribbon { display:grid; grid-template-columns:repeat(3, 1fr); gap:7px; margin:0 0 12px; }
+        .workflow-id { border:1px solid #cfd8dc; border-radius:6px; padding:7px; background:#fff; color:#455a64; min-width:0; }
+        .workflow-id-head { display:flex; align-items:center; gap:5px; font-size:.73em; font-weight:700; }
+        .workflow-id svg { width:15px; height:15px; color:#546e7a; }
+        .workflow-id code { display:block; margin-top:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:.73em; }
+        .workflow-id.is-available { border-color:#00838f; background:#e0f7fa; color:#004d40; }
+        .workflow-id.is-current { box-shadow:0 0 0 3px rgba(0,131,143,.14); animation:workflowIdPulse 1.5s ease-in-out infinite; }
+        .workflow-journey.has-error .workflow-flow { background-image:linear-gradient(#c62828,#c62828); }
+        .workflow-journey.has-error .workflow-packet { background:#c62828; box-shadow:0 0 0 3px rgba(198,40,40,.16); }
+        .guided-steps { display:grid; grid-template-columns:repeat(4, 1fr); gap:7px; }
+        .guided-step { padding:8px; border:1px solid #c9d8d5; border-radius:6px; background:#fff; font-size:.8em; }
+        .guided-step.ready { border-color:#00838f; background:#e0f7fa; }
+        .guided-step.done { border-color:#2e7d32; background:#e8f5e9; }
+        .guided-step strong { display:block; color:#17454a; }
+        .system-detail { display:none; margin:10px 0; padding:10px; border-left:3px solid #1769aa; background:#e5f1fa; color:#163f59; animation:workflowCaptionIn .25s ease-out; }
+        .system-detail.is-open { display:flex; gap:8px; }
+        .system-detail svg { width:20px; height:20px; flex:0 0 auto; }
+        .status-journey { display:flex; align-items:center; gap:4px; overflow:auto; margin:8px 0 0; }
+        .status-journey-step { flex:1 0 115px; padding:6px; border:1px solid #c9d8d5; background:#fff; color:#557078; font-size:.76em; text-align:center; }
+        .status-journey-step.is-current { border-color:#00838f; background:#e0f7fa; color:#004d40; font-weight:700; animation:workflowStagePulse 1.5s ease-in-out infinite; }
+        .workflow-retrieve { display:grid; gap:5px; margin:2px 0 12px; padding:9px; border:1px solid #a5d6a7; border-radius:6px; background:#f1f8e9; }
+        .workflow-retrieve[hidden] { display:none; }
+        .workflow-retrieve-title { display:flex; align-items:center; gap:6px; font-size:.8em; font-weight:700; color:#1b5e20; }
+        .workflow-retrieve-title svg { width:17px; height:17px; }
+        .workflow-retrieve-line { display:grid; grid-template-columns:1fr 46px 1fr; align-items:center; gap:6px; font-size:.75em; color:#37474f; }
+        .workflow-retrieve-line span:last-child { text-align:right; }
+        .workflow-retrieve-track { position:relative; height:14px; overflow:hidden; background:linear-gradient(#66bb6a,#66bb6a) center / 100% 2px no-repeat; }
+        .workflow-retrieve-track::after { content:'›'; position:absolute; right:0; top:-5px; color:#2e7d32; font-size:18px; font-weight:700; }
+        .workflow-retrieve-line.return { direction:rtl; }
+        .workflow-retrieve-line.return .workflow-retrieve-track::after { content:'‹'; right:auto; left:0; }
+        .workflow-retrieve-line.return .workflow-retrieve-track { transform:scaleX(-1); }
+        .workflow-retrieve-packet { position:absolute; top:4px; left:-8px; width:7px; height:7px; border-radius:50%; background:#2e7d32; box-shadow:0 0 0 3px rgba(46,125,50,.16); animation:workflowPacket 1.45s linear infinite; }
+        .workflow-retrieve-line.return .workflow-retrieve-packet { animation-delay:.55s; }
         .workflow-diagram svg .active rect, .workflow-diagram svg .active polygon, .workflow-diagram svg .active path { animation:workflowNodePulse 1.5s ease-in-out infinite; }
         .workflow-diagram svg .next rect, .workflow-diagram svg .next polygon, .workflow-diagram svg .next path { stroke-dasharray:7 4; animation:workflowNextFlow 1.1s linear infinite; }
         @keyframes workflowPhasePulse { 50% { box-shadow:0 0 0 6px rgba(0,131,143,0); } }
         @keyframes workflowStagePulse { 50% { background:#b2ebf2; } }
+        @keyframes workflowIdPulse { 50% { box-shadow:0 0 0 6px rgba(0,131,143,0); } }
+        @keyframes workflowLaneEnter { from { opacity:0; transform:translateX(-12px); } to { opacity:1; transform:translateX(0); } }
+        @keyframes workflowIconSignal { 50% { transform:scale(1.16); color:#00838f; } }
+        @keyframes workflowCaptionIn { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
         @keyframes workflowPacket { to { transform:translateX(42px); } }
         @keyframes workflowNodePulse { 50% { filter:brightness(1.12); } }
         @keyframes workflowNextFlow { to { stroke-dashoffset:-22; } }
-        @media (prefers-reduced-motion: reduce) { .workflow-phase.is-current, .workflow-stage.is-current, .workflow-packet, .workflow-diagram svg .active rect, .workflow-diagram svg .active polygon, .workflow-diagram svg .active path, .workflow-diagram svg .next rect, .workflow-diagram svg .next polygon, .workflow-diagram svg .next path { animation:none; } }
+        @media (prefers-reduced-motion: reduce) { .workflow-phase.is-current, .workflow-lane, .workflow-stage.is-current, .workflow-stage.is-current svg, .workflow-id.is-current, .workflow-packet, .workflow-retrieve-packet, .workflow-data-caption, .workflow-diagram svg .active rect, .workflow-diagram svg .active polygon, .workflow-diagram svg .active path, .workflow-diagram svg .next rect, .workflow-diagram svg .next polygon, .workflow-diagram svg .next path { animation:none; } }
         .workflow-drawer-toggle { position: absolute; left: -9999px; }
         .workflow-drawer-button {
             position: fixed;
@@ -151,6 +192,8 @@
             .workflow-lane { grid-template-columns:1fr; }
             .workflow-lane-steps { overflow-x:auto; }
             .workflow-stage { min-width:112px; }
+            .workflow-id-ribbon { grid-template-columns:1fr; }
+            .guided-steps { grid-template-columns:repeat(2, 1fr); }
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
@@ -397,6 +440,16 @@
                     const steps = (stage.dataset.workflowStep || '').split(',').map(Number);
                     stage.classList.toggle('is-current', steps.includes(currentStep));
                 });
+                document.querySelectorAll('[data-workflow-id-step]').forEach((id) => {
+                    const startsAt = Number(id.dataset.workflowIdStep || 99);
+                    id.classList.toggle('is-current', currentStep >= startsAt);
+                });
+                const retrieve = document.getElementById('workflowRetrieve');
+                if (retrieve) retrieve.hidden = currentStep !== 7;
+                const journey = document.querySelector('.workflow-journey');
+                const message = document.querySelector('.success');
+                const hasError = message && /❌|fehler|gescheitert|kritisch/i.test(message.textContent || '');
+                if (journey) journey.classList.toggle('has-error', Boolean(hasError));
                 const dataFlow = {
                     1: ['HL7 ADT: KIS → RIS', 'Patientenstammdaten wie Name und PatientID werden vom KIS an das RIS übermittelt.'],
                     2: ['HL7 QRY / ORU: RIS ↔ LIS', 'Das RIS fragt Kreatinin an; das LIS liefert Laborwert und Status als Ergebnis zurück.'],
@@ -409,16 +462,37 @@
                 const caption = document.getElementById('workflowDataCaption');
                 const flow = dataFlow[currentStep];
                 if (caption && flow) {
+                    caption.style.animation = 'none';
                     caption.innerHTML = `<i data-lucide="radio-tower" aria-hidden="true"></i><div><strong>${flow[0]}</strong>${flow[1]}</div>`;
+                    void caption.offsetWidth;
+                    caption.style.animation = '';
                     if (window.lucide) window.lucide.createIcons({ nodes: [caption] });
+                    if (hasError) {
+                        caption.innerHTML += '<div><strong>Unterbrechung erkannt</strong> Prüfe die rote Verbindung und den Hinweis auf dieser Seite, bevor du fortfährst.</div>';
+                    }
                 }
                 workflowTraceAdd(currentText, nextText, activeNode, nextNode);
                 workflowTraceRender();
+            }
+
+            function showSystemDetail(system) {
+                const details = {
+                    KIS: ['building-2', 'KIS: Patient aufnehmen', 'Eingabe: Name und PatientID. Ausgang: HL7 ADT an das RIS.'],
+                    LIS: ['test-tubes', 'LIS: Laborwert liefern', 'Eingabe: Anfrage mit PatientID. Ausgang: Kreatinin und Status als HL7 ORU an das RIS.'],
+                    RIS: ['clipboard-check', 'RIS: Auftrag steuern', 'Übernimmt Patient und Laborwert, erzeugt AccessionNumber und gibt den Auftrag als HL7 ORM an die Worklist weiter.'],
+                };
+                const detail = details[system];
+                const panel = document.getElementById('systemDetail');
+                if (!detail || !panel) return;
+                panel.innerHTML = `<i data-lucide="${detail[0]}" aria-hidden="true"></i><div><strong>${detail[1]}</strong><br>${detail[2]}</div>`;
+                panel.classList.add('is-open');
+                if (window.lucide) window.lucide.createIcons({ nodes: [panel] });
             }
         </script>
 </head>
 <body>
     <h1>Radiologie Workflow Simulator</h1>
+    <p class="page-kicker">Arbeite die Schritte 1-7 der Reihe nach ab. Die Workflow-Ansicht zeigt jederzeit, welche Daten zwischen den Systemen unterwegs sind.</p>
 
     {% if active_patient_track %}
         <div class="patient-track">
@@ -432,6 +506,23 @@
     {% endif %}
 
     <p class="protocol-note"><span class="badge badge-real">ECHT</span> = echtes DICOM-Protokoll gegen den Orthanc-Server. <span class="badge badge-sim">VEREINFACHT</span> = HL7 wird zu Lernzwecken simuliert (kein echtes Interface-Engine-Routing).</p>
+
+    {% set current_status = active_patient_track.status if active_patient_track else '' %}
+    {% set progress = {'Auftrag freigegeben': 1, 'Untersuchung begonnen': 2, 'Untersuchung abgeschlossen': 3, 'Befundet': 4}.get(current_status, 0) %}
+    <div class="section">
+        <h2>Geführter Lernpfad</h2>
+        <div class="guided-steps" aria-label="Fortschritt im Lernpfad">
+            <div class="guided-step {{ 'done' if patients else 'ready' }}"><strong>1. Patient erfassen</strong>{% if patients %}Erledigt{% else %}Jetzt starten{% endif %}</div>
+            <div class="guided-step {{ 'done' if last_lis_summary else ('ready' if patients else '') }}"><strong>2. Kreatinin prüfen</strong>{% if last_lis_summary %}Erledigt{% elif patients %}Bereit{% else %}Patient fehlt{% endif %}</div>
+            <div class="guided-step {{ 'done' if progress >= 1 else ('ready' if last_lis_summary else '') }}"><strong>3. Auftrag freigeben</strong>{% if progress >= 1 %}Erledigt{% elif last_lis_summary %}Bereit{% else %}Laborwert fehlt{% endif %}</div>
+            <div class="guided-step {{ 'done' if progress >= 3 else ('ready' if progress >= 1 else '') }}"><strong>4-5. CT und PACS</strong>{% if progress >= 3 %}Bilder gesendet{% elif progress >= 1 %}Bereit{% else %}Auftrag fehlt{% endif %}</div>
+        </div>
+        <div class="status-journey" aria-label="Status der Untersuchung">
+            {% for label in ['Auftrag freigegeben', 'Untersuchung begonnen', 'Untersuchung abgeschlossen', 'Befundet'] %}
+                <div class="status-journey-step {{ 'is-current' if current_status == label else '' }}">{{ loop.index }}. {{ label }}</div>
+            {% endfor %}
+        </div>
+    </div>
 
     <div class="section">
         <h2>SuS Session (zentraler Server)</h2>
@@ -509,14 +600,34 @@
                 </div>
             </div>
             <div id="workflowDataCaption" class="workflow-data-caption" aria-live="polite"></div>
+            <div id="systemDetail" class="system-detail" aria-live="polite"></div>
+            <div class="workflow-id-ribbon" aria-label="ID-Kette der aktuellen Untersuchung">
+                <div class="workflow-id is-available" data-workflow-id-step="1">
+                    <div class="workflow-id-head"><i data-lucide="id-card" aria-hidden="true"></i>Ab Schritt 1: PatientID</div>
+                    <code>{{ active_patient_track.pid if active_patient_track else 'wird im KIS erfasst' }}</code>
+                </div>
+                <div class="workflow-id {% if active_patient_track and active_patient_track.acc %}is-available{% endif %}" data-workflow-id-step="3">
+                    <div class="workflow-id-head"><i data-lucide="ticket" aria-hidden="true"></i>Ab Schritt 3: Accession</div>
+                    <code>{{ active_patient_track.acc if active_patient_track and active_patient_track.acc else 'entsteht im RIS-Auftrag' }}</code>
+                </div>
+                <div class="workflow-id {% if active_patient_track and active_patient_track.study_uid %}is-available{% endif %}" data-workflow-id-step="5">
+                    <div class="workflow-id-head"><i data-lucide="fingerprint" aria-hidden="true"></i>Ab Schritt 5: Study UID</div>
+                    <code>{{ active_patient_track.study_uid if active_patient_track and active_patient_track.study_uid else 'entsteht für die Bildstudie' }}</code>
+                </div>
+            </div>
+            <div id="workflowRetrieve" class="workflow-retrieve" hidden aria-label="C-MOVE und C-STORE Rückkanal">
+                <div class="workflow-retrieve-title"><i data-lucide="repeat-2" aria-hidden="true"></i>Schritt 7: Zwei getrennte Nachrichten</div>
+                <div class="workflow-retrieve-line"><span>Workstation</span><div class="workflow-retrieve-track"><i class="workflow-retrieve-packet"></i></div><span>PACS: C-MOVE Anfrage</span></div>
+                <div class="workflow-retrieve-line return"><span>Workstation: C-STORE Bilder</span><div class="workflow-retrieve-track"><i class="workflow-retrieve-packet"></i></div><span>PACS</span></div>
+            </div>
                         <template id="workflowGraphBase">
 flowchart TB
     classDef system fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#000
     classDef backend fill:#ffebee,stroke:#c62828,stroke-width:2px,color:#000
-    classDef hl7 fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,color:#000
+    classDef hl7 fill:#fff3e0,stroke:#ef6c00,stroke-width:1px,color:#000
     classDef dicom fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,color:#000
-    classDef active stroke:#000,stroke-width:4px
-    classDef next stroke-dasharray: 6 3
+    classDef active fill:#e0f7fa,stroke:#00695c,stroke-width:4px
+    classDef next fill:#fffde7,stroke:#f9a825,stroke-width:3px,stroke-dasharray: 6 3
 
     KIS["KIS"]
     RIS["RIS"]
@@ -627,7 +738,7 @@ flowchart TB
                                 } else if (step === 3) {
                                     setWorkflowUi(cur || '3. HL7 ORM', nxt || '4. DICOM C-FIND (MWL)', 'ORM', 'MWL');
                                 } else {
-                                    setWorkflowUi(cur || '1. HL7 ADT', nxt || '2. HL7 ORU', 'ADT', 'ORU');
+                                    setWorkflowUi(cur || '1. HL7 ADT', nxt || '2a. HL7 QRY', 'ADT', 'QRY');
                                 }
                             });
                         </script>
@@ -768,6 +879,7 @@ flowchart TB
         <div class="tile-grid">
             <div class="tile">
                 <h3>1) HL7 ADT: KIS → RIS (Patient aufnehmen)<span class="badge badge-sim">VEREINFACHT</span></h3>
+                <button type="button" onclick="showSystemDetail('KIS')" style="background:#1769aa; margin-bottom:8px;">KIS erklärt</button>
                 <p class="protocol-note">Zuerst Stammdaten erfassen. Das löst ein <code>HL7 ADT</code> Event aus (sichtbar als Roh-Nachricht).</p>
 
                 <form action="/kis/register_patient" method="post">
@@ -818,6 +930,7 @@ flowchart TB
 
             <div class="tile">
                 <h3>2) HL7 ORU: RIS ↔ LIS (Kreatinin)<span class="badge badge-sim">VEREINFACHT</span></h3>
+                <button type="button" onclick="showSystemDetail('LIS')" style="background:#1769aa; margin-bottom:8px;">LIS erklärt</button>
                 <p class="protocol-note">Nachdem der Patient erfasst ist, sendet das RIS eine Anfrage ans LIS. Das LIS antwortet mit einem Labor-Resultat (HL7 ORU).</p>
 
                 <label>Patient auswählen (aus KIS):</label>
@@ -850,6 +963,7 @@ flowchart TB
 
             <div class="tile">
                 <h3>3) HL7 ORM: RIS (Auftrag freigeben)<span class="badge badge-sim">VEREINFACHT</span></h3>
+                <button type="button" onclick="showSystemDetail('RIS')" style="background:#1769aa; margin-bottom:8px;">RIS erklärt</button>
                 <p class="protocol-note">Auftrag freigeben und Worklist-Eintrag erzeugen (nach dem Laborwert).</p>
 
                 <div class="protocol-note" style="margin-top: 6px;">RIS Patientenliste (aus ADT übernommen):</div>

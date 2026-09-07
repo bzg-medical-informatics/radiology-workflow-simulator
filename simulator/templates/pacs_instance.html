@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <title>PACS — Instanz</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='learning-ui.css') }}">
   <style>
     body { font-family: sans-serif; max-width: 1300px; margin: 0 auto; padding: 20px; }
     .back-btn { background: #757575; margin-bottom: 20px; padding: 10px 15px; text-decoration: none; display: inline-block; color: white; border-radius: 6px; }
@@ -285,6 +286,7 @@
   {% endif %}
 
   <h1>Instanz: Viewer + Metadaten</h1>
+  <div class="learning-step">Instanz: Bild und zugehörige DICOM-Tags gemeinsam lesen</div>
   <p class="note">Aktiver SuS-Code: <strong>{{ student_code }}</strong></p>
 
   <input id="workflowDrawer" class="workflow-drawer-toggle" type="checkbox">

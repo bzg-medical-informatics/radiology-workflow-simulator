@@ -249,4 +249,5 @@ def scan():
         worklist_refreshed_at=datetime.datetime.now().strftime('%H:%M:%S'),
         workflow_current="5. DICOM C-STORE: Bilder senden → PACS",
         workflow_next="6. DICOM C-FIND (Study): Workstation ↔ PACS (Studien suchen)",
+        upload_identifier_preview=summary.get("identifier_preview", []) if scan_was_real else [],
     )

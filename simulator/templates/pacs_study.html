@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <title>PACS — Studie</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='learning-ui.css') }}">
   <style>
     body { font-family: sans-serif; max-width: 1200px; margin: 0 auto; padding: 20px; }
     .back-btn { background: #757575; margin-bottom: 20px; padding: 10px 15px; text-decoration: none; display: inline-block; color: white; border-radius: 6px; }
@@ -276,6 +277,7 @@
   <a href="/pacs" class="back-btn">&larr; Zurück zur Studienliste</a>
 
   <h1>Studie</h1>
+  <div class="learning-step">Studie: Serien vergleichen und gemeinsame Metadaten erkennen</div>
   <p class="note">Aktiver SuS-Code: <strong>{{ student_code }}</strong></p>
 
   <input id="workflowDrawer" class="workflow-drawer-toggle" type="checkbox">

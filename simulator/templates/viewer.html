@@ -2,6 +2,7 @@
 <html lang="de">
 <head>
     <title>Radiologie Befundungs-Arbeitsplatz</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='learning-ui.css') }}">
     <style>
         body { font-family: sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; }
         .section { background: #e8f5e9; padding: 15px; margin-bottom: 20px; border-radius: 5px; }
@@ -279,6 +280,7 @@
     <a href="/" class="back-btn">&larr; Zurück zum Hauptmenü</a>
     
     <h1>Radiologe / Workstation</h1>
+    <div class="learning-step">Dashboard-Schritte 6-7: Studien suchen, abrufen und befunden</div>
 
     {% if active_patient_track %}
         <div class="patient-track">

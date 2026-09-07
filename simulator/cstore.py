@@ -131,6 +131,7 @@ def send_c_store_uploaded_files(dicom_paths, *, patient_name, patient_id, access
         "skipped": 0,
         "errors": [],
         "identifier_mismatches": [],
+        "identifier_preview": [],
     }
 
     if not dicom_paths:
@@ -194,6 +195,15 @@ def send_c_store_uploaded_files(dicom_paths, *, patient_name, patient_id, access
                 continue
 
             mismatches = _identifier_mismatches(ds, patient_id, accession_number)
+            if len(summary["identifier_preview"]) < 3:
+                summary["identifier_preview"].append({
+                    "filename": os.path.basename(path),
+                    "original_patient_id": str(getattr(ds, "PatientID", "") or "-"),
+                    "original_accession": str(getattr(ds, "AccessionNumber", "") or "-"),
+                    "worklist_patient_id": patient_id,
+                    "worklist_accession": accession_number,
+                    "retagged": retag,
+                })
             if mismatches and not retag:
                 summary["identifier_mismatches"].append(
                     f"{os.path.basename(path)}: {', '.join(mismatches)} stimmt nicht mit dem Worklist-Eintrag überein"

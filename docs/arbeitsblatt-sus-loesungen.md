@@ -5,6 +5,12 @@ numbersections: true
 
 Hinweis: Das sind Musterlösungen. Je nach Daten (PID, Kreatinin, DICOM-Dateien) können Werte variieren.
 
+## Lernhilfen im Dashboard
+
+- Der Bereich **"Geführter Lernpfad"** zeigt, welche Schritte bereits erledigt sind und welcher nächste Schritt sinnvoll ist.
+- Die **Statusspur** visualisiert: Auftrag freigegeben → Untersuchung begonnen → Untersuchung abgeschlossen → Befundet.
+- **KIS erklärt**, **LIS erklärt** und **RIS erklärt** zeigen pro System Eingabe, Ausgabe und Empfänger der Nachricht.
+
 # Aufgabe 1: System-Check (DICOM C-ECHO)
 
 - **Was ist C-ECHO?** Ein DICOM "Ping" (Verification). Damit prüft man, ob eine DICOM-Verbindung technisch funktioniert.
@@ -16,6 +22,7 @@ Hinweis: Das sind Musterlösungen. Je nach Daten (PID, Kreatinin, DICOM-Dateien)
 
 - **Welche Eingaben sind Stammdaten?** Patientenname und Patienten-ID (PID). Diese Identitätsdaten sind die Basis für spätere Zuordnung.
 - **Warum müssen sie später in DICOM-Tags wieder auftauchen?** Damit Bilddaten (DICOM) und Verwaltungsdaten (HL7) zum selben Patienten matchen, z.B. in den DICOM-Tags `PatientName` und `PatientID`.
+- **KIS erklärt:** Das KIS sendet Patientenname und PatientID als HL7 ADT an das RIS.
 
 ## LIS: Kreatinin prüfen (HL7 ORU)
 
@@ -26,6 +33,7 @@ Hinweis: Das sind Musterlösungen. Je nach Daten (PID, Kreatinin, DICOM-Dateien)
 - **Wo steht der Kreatininwert?** Im Segment `OBX`.
   - Wert ist im `OBX` im Value-Feld (in der Demo: `OBX|...||<WERT>|mg/dL|...`).
 - **Was bedeutet ein hoher Wert fachlich (kurz)?** Hinweis auf eingeschränkte Nierenfunktion; Kontrastmittelgabe kann riskant sein.
+- **LIS erklärt:** Die PatientID in der QRY-Anfrage ordnet das Ergebnis aus der ORU-Antwort dem richtigen Patienten zu.
 
 ## RIS: Auftrag freigeben (HL7 ORM) + Worklist erstellen
 
@@ -33,6 +41,7 @@ Hinweis: Das sind Musterlösungen. Je nach Daten (PID, Kreatinin, DICOM-Dateien)
 - **Wo finde ich PID und OBR?**
   - Patient: Segment `PID` (Patienten-ID und Name)
   - Untersuchung/Auftrag: meist in `ORC` (Order Control) und `OBR` (Order Detail), z.B. Accession im `ORC`/`OBR`.
+- **RIS erklärt:** Die AccessionNumber entsteht mit dem Auftrag und verknüpft Auftrag, Worklist und DICOM-Studie.
 
 # Aufgabe 3: Modalität (CT) holt Worklist (DICOM C-FIND / MWL)
 
@@ -46,6 +55,7 @@ Hinweis: Das sind Musterlösungen. Je nach Daten (PID, Kreatinin, DICOM-Dateien)
   - Datei ist kein DICOM oder hat kaputte Meta-Header
   - nicht unterstützte Transfer Syntax (komprimiert)
   - fehlende Pflicht-Tags oder unlesbare Pixel-Daten
+- **Tag-Vergleich: Upload und Worklist:** Bei aktivem Retagging werden PatientID, AccessionNumber und StudyInstanceUID auf den Worklist-Auftrag gesetzt. Ohne Retagging müssen Originalwerte und Worklist-Werte übereinstimmen, sonst besteht das Risiko einer falschen Patienten- oder Auftragszuordnung.
 
 # Aufgabe 5: PACS Check – DICOM Metadaten + Viewer (gefiltert)
 
@@ -115,6 +125,7 @@ Hinweis: Das sind Musterlösungen. Je nach Daten (PID, Kreatinin, DICOM-Dateien)
 
 - **Woran erkennst du im Log, dass dieser Versuch fehlgeschlagen ist?**
   - Der Eintrag im **DICOM Protokoll-Log** zeigt "Fehler" statt "OK", und die Detailspalte nennt den (simulierten) falschen Port bzw. "Association gescheitert".
+- **Workflow-Panel:** Die betroffene Datenverbindung wird rot markiert. Der Hinweis fordert dazu auf, die Verbindung und die Fehlermeldung vor dem nächsten Schritt zu prüfen.
 - **Plausible Ursache in echt:**
   - Falscher Port/AE-Title, Netzwerkproblem, Firewall, oder der DICOM-Dienst auf der Gegenseite läuft nicht.
 
