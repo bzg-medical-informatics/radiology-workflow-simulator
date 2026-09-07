@@ -42,6 +42,7 @@ numbersections: true
 
 - Die App ergänzt deine PID und AccessionNumber mit deinem SuS-Code, damit Daten verschiedener Gruppen getrennt bleiben. Aus `007` kann daher z.B. `SUS-ABC-007` werden.
 - Die StudyInstanceUID wird im Simulator für dieselbe AccessionNumber reproduzierbar erzeugt. In einem echten DICOM-Workflow erhält jede Untersuchung eine neu erzeugte, weltweit eindeutige StudyInstanceUID.
+- **Nummerierung:** Die App zeigt die technischen **Prozessschritte 1-7**: Verwaltung 1-3, Modalität 4-5, Workstation 6-7. Die Überschriften **Aufgabe 1-11** in diesem Arbeitsblatt sind dagegen Arbeitsaufträge und keine zusätzlichen Prozessschritte.
 
 ## Zugriff auf Orthanc (PACS)
 
@@ -53,7 +54,7 @@ numbersections: true
 - Öffne im Simulator die Seite **/pacs** (Button: "PACS (SuS) öffnen (gefiltert)").
 - Dort siehst du nur Studien, deren `PatientID` mit deinem SuS-Code beginnt, inklusive Metadaten und einfachem Viewer.
 
-# Aufgabe 1: System-Check (DICOM C-ECHO)
+# Aufgabe 1: System-Check (DICOM C-ECHO, Vorbereitung)
 
 1) Klicke auf **"Verbindung testen (C-ECHO)"**.
 2) Beobachte die Rückmeldung.
@@ -62,11 +63,11 @@ numbersections: true
    - Welche Komponente wird hier getestet?
 4) Prüfe im Dashboard-Abschnitt **"DICOM Protokoll-Log"**, ob dein C-ECHO als "OK" oder "Fehler" eingetragen wurde.
 
-# Aufgabe 2: Verwaltung (HL7) in 3 Schritten
+# Aufgabe 2: Verwaltung (Dashboard-Schritte 1-3)
 
 Merksatz: **ADT = Patient**, **ORU = Labor**, **ORM = Auftrag**.
 
-## KIS: Patient aufnehmen (HL7 ADT)
+## Dashboard-Schritt 1: KIS - Patient aufnehmen (HL7 ADT)
 
 1) Trage einen Patienten ein:
    - Patientenname: z.B. `BOND^JAMES`
@@ -75,7 +76,7 @@ Merksatz: **ADT = Patient**, **ORU = Labor**, **ORM = Auftrag**.
    - Welche Eingaben sind Stammdaten?
    - Warum müssen sie später in DICOM-Tags wieder auftauchen?
 
-## LIS: Kreatinin prüfen (HL7 ORU)
+## Dashboard-Schritt 2: LIS - Kreatinin prüfen (HL7 QRY/ORU)
 
 1) Klicke auf **"RIS → LIS: Kreatinin anfordern"**.
 2) Lies Kreatinin-Wert und Status.
@@ -87,7 +88,7 @@ Merksatz: **ADT = Patient**, **ORU = Labor**, **ORM = Auftrag**.
 
 **Kommunikationsweg:** Das RIS fragt den Wert mit `HL7 QRY^Q02` beim LIS an. Das LIS antwortet mit `HL7 ORU^R01`; darin steht der Kreatininwert im Segment `OBX`.
 
-## RIS: Auftrag freigeben (HL7 ORM) + Worklist erstellen
+## Dashboard-Schritt 3: RIS - Auftrag freigeben (HL7 ORM) + Worklist erstellen
 
 1) Trage eine Untersuchungsbeschreibung ein (z.B. `CT Abdomen mit KM`).
 2) Klicke auf **"RIS: Auftrag freigeben (HL7 ORM) + Worklist erstellen"**.
@@ -106,14 +107,14 @@ ORC|NW|ACC001
 OBR|1|ACC001||CT^CT Abdomen
 ```
 
-# Aufgabe 3: Modalität (CT) holt Worklist (DICOM C-FIND / MWL)
+# Aufgabe 3: Dashboard-Schritt 4 - Modalität (CT) holt Worklist (DICOM C-FIND / MWL)
 
 1) Wechsle zur CT-Seite. Die Modalität fragt beim Laden der Seite automatisch per **DICOM C-FIND** die Worklist ab. Mit dem Button **"Worklist aktualisieren (DICOM C-FIND)"** kannst du die Abfrage jederzeit erneut auslösen.
 2) Beobachte:
    - Welche Patientendaten kommen aus der Worklist?
    - Welche ID verknüpft Auftrag/Accession aus HL7 mit der DICOM Worklist?
 
-# Aufgabe 4: CT-Scan (DICOM C-STORE) – echte DICOM-Dateien senden
+# Aufgabe 4: Dashboard-Schritt 5 - CT-Scan (DICOM C-STORE) - echte DICOM-Dateien senden
 
 1) Wähle einen Worklist-Eintrag aus (falls die UI das anbietet).
 2) Lade echte DICOM-Dateien hoch (mehrere Dateien oder ZIP).
@@ -123,7 +124,7 @@ OBR|1|ACC001||CT^CT Abdomen
    - Gab es "skipped" oder "failed" Dateien? Was könnte der Grund sein?
    - Falls eine Warnung zu PID oder Accession erscheint: Warum wäre das eine gefährliche Verwechslung?
 
-# Aufgabe 5: PACS Check – DICOM Metadaten + Viewer (gefiltert)
+# Aufgabe 5: PACS Check nach Dashboard-Schritt 5 - DICOM Metadaten + Viewer (gefiltert)
 
 1) Öffne im Simulator die Seite **/pacs**.
 2) Klicke bei deiner Studie auf **Öffnen**, dann bei einer Serie auf **Öffnen**.
@@ -152,7 +153,7 @@ OBR|1|ACC001||CT^CT Abdomen
 4) Notiere:
    - Woran erkennst du eine neue Serie (z.B. neue `SeriesInstanceUID`, andere `SeriesDescription`)?
 
-# Aufgabe 6: Workstation – Studien suchen (DICOM C-FIND Study Root)
+# Aufgabe 6: Dashboard-Schritt 6 - Workstation: Studien suchen (DICOM C-FIND Study Root)
 
 1) Öffne die Workstation/Viewer-Seite.
 2) Schau dir die Trefferliste an.
@@ -160,14 +161,14 @@ OBR|1|ACC001||CT^CT Abdomen
    - Welche Spalten siehst du (Patient, Datum, Modalität)?
    - Findest du deinen Patienten wieder?
 
-# Aufgabe 7: Retrieve (DICOM C-MOVE) + Empfang (DICOM C-STORE Rückkanal)
+# Aufgabe 7: Dashboard-Schritt 7 - Retrieve (DICOM C-MOVE) + Empfang (DICOM C-STORE Rückkanal)
 
 1) Wähle eine Studie aus und starte **Retrieve (C-MOVE)**.
 2) Warte kurz und beobachte die Empfangsliste.
 3) Notiere:
    - Warum ist C-MOVE ein "Pull", führt aber zu einem "Push" über den C-STORE Rückkanal?
 
-# Aufgabe 8: Befundung auf der Workstation (HL7 ORU^R01)
+# Aufgabe 8: Befundung nach Dashboard-Schritt 7 auf der Workstation (HL7 ORU^R01)
 
 Voraussetzung: Du hast in Aufgabe 7 Bilder empfangen (C-STORE Cache ist nicht leer).
 
@@ -182,7 +183,7 @@ Voraussetzung: Du hast in Aufgabe 7 Bilder empfangen (C-STORE Cache ist nicht le
    - Welche Patientendaten tauchen in der ORU wieder auf?
    - Wo (grob) findest du die `StudyInstanceUID` im Text?
 
-# Aufgabe 9: Status der Untersuchung (begonnen / abgeschlossen / befundet)
+# Aufgabe 9: Status der Untersuchung (Dashboard-Schritte 3, 5 und Befundung)
 
 Ziel: Du beobachtest im Dashboard, wie sich der **Status der Untersuchung** entlang des Workflows ändert.
 

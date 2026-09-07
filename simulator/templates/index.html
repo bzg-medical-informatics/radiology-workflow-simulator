@@ -18,6 +18,38 @@
         .workflow-steps { color: #546e7a; font-weight: 400; font-size: 0.85em; }
         .workflow-diagram { margin-top: 10px; padding-top: 10px; border-top: 1px solid #eceff1; flex: 1 1 auto; min-height: 0; overflow: auto; }
         .workflow-diagram svg { width: 100%; height: auto; }
+        .workflow-phases { display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin:4px 0 12px; }
+        .workflow-phase { border:1px solid #cfd8dc; border-radius:6px; padding:8px; color:#546e7a; background:#fafafa; }
+        .workflow-phase-head { display:flex; align-items:center; gap:6px; font-weight:700; color:#263238; }
+        .workflow-phase svg { width:18px; height:18px; color:#1565c0; }
+        .workflow-phase small { display:block; margin-top:3px; font-size:0.78em; }
+        .workflow-phase.is-current { border-color:#00838f; background:#e0f7fa; box-shadow:0 0 0 3px rgba(0,131,143,.12); animation:workflowPhasePulse 1.7s ease-in-out infinite; }
+        .workflow-journey { display:grid; gap:8px; margin:0 0 12px; }
+        .workflow-lane { display:grid; grid-template-columns:78px 1fr; gap:8px; align-items:center; padding:8px; border-left:3px solid #90a4ae; background:#fafafa; }
+        .workflow-lane-label { font-size:.74em; font-weight:700; color:#455a64; text-transform:uppercase; }
+        .workflow-lane-steps { display:flex; align-items:stretch; min-width:0; }
+        .workflow-stage { flex:1 1 0; min-width:0; padding:6px; border:1px solid #cfd8dc; background:#fff; color:#37474f; }
+        .workflow-stage-top { display:flex; align-items:center; gap:5px; font-size:.78em; font-weight:700; }
+        .workflow-stage svg { width:16px; height:16px; color:#1565c0; flex:0 0 auto; }
+        .workflow-stage small { display:block; margin-top:2px; font-size:.7em; line-height:1.2; }
+        .workflow-stage.is-current { border-color:#00838f; background:#e0f7fa; color:#004d40; box-shadow:inset 0 0 0 1px #00838f; animation:workflowStagePulse 1.5s ease-in-out infinite; }
+        .workflow-flow { position:relative; flex:0 0 28px; min-height:42px; overflow:hidden; background:linear-gradient(#78909c,#78909c) center / 100% 2px no-repeat; }
+        .workflow-flow::after { content:'›'; position:absolute; right:0; top:50%; transform:translateY(-54%); color:#546e7a; font-size:19px; font-weight:700; }
+        .workflow-packet { position:absolute; width:7px; height:7px; top:calc(50% - 3px); left:-8px; border-radius:50%; background:#00838f; box-shadow:0 0 0 3px rgba(0,131,143,.16); animation:workflowPacket 1.8s linear infinite; }
+        .workflow-flow:nth-of-type(2) .workflow-packet { animation-delay:.6s; }
+        .workflow-flow.dicom .workflow-packet { background:#2e7d32; box-shadow:0 0 0 3px rgba(46,125,50,.16); }
+        .workflow-flow.hl7 .workflow-packet { background:#ef6c00; box-shadow:0 0 0 3px rgba(239,108,0,.16); }
+        .workflow-data-caption { display:flex; gap:8px; align-items:flex-start; margin:0 0 12px; padding:9px; border-left:3px solid #00838f; background:#e0f7fa; color:#004d40; font-size:.84em; line-height:1.35; }
+        .workflow-data-caption svg { width:18px; height:18px; flex:0 0 auto; margin-top:1px; }
+        .workflow-data-caption strong { display:block; margin-bottom:2px; }
+        .workflow-diagram svg .active rect, .workflow-diagram svg .active polygon, .workflow-diagram svg .active path { animation:workflowNodePulse 1.5s ease-in-out infinite; }
+        .workflow-diagram svg .next rect, .workflow-diagram svg .next polygon, .workflow-diagram svg .next path { stroke-dasharray:7 4; animation:workflowNextFlow 1.1s linear infinite; }
+        @keyframes workflowPhasePulse { 50% { box-shadow:0 0 0 6px rgba(0,131,143,0); } }
+        @keyframes workflowStagePulse { 50% { background:#b2ebf2; } }
+        @keyframes workflowPacket { to { transform:translateX(42px); } }
+        @keyframes workflowNodePulse { 50% { filter:brightness(1.12); } }
+        @keyframes workflowNextFlow { to { stroke-dashoffset:-22; } }
+        @media (prefers-reduced-motion: reduce) { .workflow-phase.is-current, .workflow-stage.is-current, .workflow-packet, .workflow-diagram svg .active rect, .workflow-diagram svg .active polygon, .workflow-diagram svg .active path, .workflow-diagram svg .next rect, .workflow-diagram svg .next polygon, .workflow-diagram svg .next path { animation:none; } }
         .workflow-drawer-toggle { position: absolute; left: -9999px; }
         .workflow-drawer-button {
             position: fixed;
@@ -116,9 +148,13 @@
 
         @media (max-width: 620px) {
             .tile-grid { grid-template-columns: 1fr; }
+            .workflow-lane { grid-template-columns:1fr; }
+            .workflow-lane-steps { overflow-x:auto; }
+            .workflow-stage { min-width:112px; }
         }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
     <script>
             mermaid.initialize({ startOnLoad: false, theme: 'neutral', securityLevel: 'loose' });
     </script>
@@ -351,6 +387,31 @@
                     steps.textContent = `Aktuell: ${currentText || '—'} | Als nächstes: ${nextText || '—'}`;
                 }
                 renderWorkflow(activeNode, nextNode);
+                const stepMatch = String(currentText || '').match(/^([1-7])[.)]/);
+                const currentStep = stepMatch ? Number(stepMatch[1]) : 0;
+                document.querySelectorAll('[data-workflow-phase]').forEach((phase) => {
+                    const steps = (phase.dataset.workflowPhase || '').split(',').map(Number);
+                    phase.classList.toggle('is-current', steps.includes(currentStep));
+                });
+                document.querySelectorAll('[data-workflow-step]').forEach((stage) => {
+                    const steps = (stage.dataset.workflowStep || '').split(',').map(Number);
+                    stage.classList.toggle('is-current', steps.includes(currentStep));
+                });
+                const dataFlow = {
+                    1: ['HL7 ADT: KIS → RIS', 'Patientenstammdaten wie Name und PatientID werden vom KIS an das RIS übermittelt.'],
+                    2: ['HL7 QRY / ORU: RIS ↔ LIS', 'Das RIS fragt Kreatinin an; das LIS liefert Laborwert und Status als Ergebnis zurück.'],
+                    3: ['HL7 ORM: RIS → MWL', 'Das RIS übergibt Auftrag, AccessionNumber und Untersuchungsbeschreibung an die Worklist.'],
+                    4: ['DICOM C-FIND: CT → MWL', 'Die Modalität ruft Patient, Auftrag und geplante Untersuchung aktiv aus der Worklist ab.'],
+                    5: ['DICOM C-STORE: CT → PACS', 'Die Modalität sendet Bildinstanzen mit PatientID, AccessionNumber und StudyInstanceUID an das Archiv.'],
+                    6: ['DICOM C-FIND: Workstation → PACS', 'Die Workstation sucht Studien im PACS anhand von Metadaten wie PatientID oder StudyInstanceUID.'],
+                    7: ['DICOM C-MOVE und C-STORE: Workstation ↔ PACS', 'Die Workstation fordert Bilder an; das PACS sendet sie per C-STORE an die Workstation zurück.'],
+                };
+                const caption = document.getElementById('workflowDataCaption');
+                const flow = dataFlow[currentStep];
+                if (caption && flow) {
+                    caption.innerHTML = `<i data-lucide="radio-tower" aria-hidden="true"></i><div><strong>${flow[0]}</strong>${flow[1]}</div>`;
+                    if (window.lucide) window.lucide.createIcons({ nodes: [caption] });
+                }
                 workflowTraceAdd(currentText, nextText, activeNode, nextNode);
                 workflowTraceRender();
             }
@@ -401,6 +462,53 @@
             <label class="workflow-drawer-close" for="workflowDrawer">Schliessen</label>
         </header>
         <div class="workflow-diagram">
+            <div class="workflow-phases" aria-label="Phasen des Workflows">
+                <div class="workflow-phase" data-workflow-phase="1,2,3">
+                    <div class="workflow-phase-head"><i data-lucide="clipboard-list" aria-hidden="true"></i>Verwaltung</div>
+                    <small>1 KIS · 2 LIS · 3 RIS</small>
+                </div>
+                <div class="workflow-phase" data-workflow-phase="4,5">
+                    <div class="workflow-phase-head"><i data-lucide="scan-line" aria-hidden="true"></i>Bildgebung</div>
+                    <small>4 Worklist · 5 C-STORE</small>
+                </div>
+                <div class="workflow-phase" data-workflow-phase="6,7">
+                    <div class="workflow-phase-head"><i data-lucide="monitor-dot" aria-hidden="true"></i>Befundung</div>
+                    <small>6 Suche · 7 Retrieve</small>
+                </div>
+            </div>
+            <div class="workflow-journey" aria-label="Animierte Übersicht des Datenflusses">
+                <div class="workflow-lane">
+                    <div class="workflow-lane-label">Verwaltung<br><small>HL7</small></div>
+                    <div class="workflow-lane-steps">
+                        <div class="workflow-stage" data-workflow-step="1"><div class="workflow-stage-top"><i data-lucide="building-2" aria-hidden="true"></i>1 KIS → RIS</div><small>ADT: Patientendaten</small></div>
+                        <div class="workflow-flow hl7"><span class="workflow-packet"></span></div>
+                        <div class="workflow-stage" data-workflow-step="2"><div class="workflow-stage-top"><i data-lucide="test-tubes" aria-hidden="true"></i>2 RIS ↔ LIS</div><small>QRY / ORU: Laborwert</small></div>
+                        <div class="workflow-flow hl7"><span class="workflow-packet"></span></div>
+                        <div class="workflow-stage" data-workflow-step="3"><div class="workflow-stage-top"><i data-lucide="clipboard-check" aria-hidden="true"></i>3 RIS → MWL</div><small>ORM: Auftrag</small></div>
+                    </div>
+                </div>
+                <div class="workflow-lane">
+                    <div class="workflow-lane-label">Bildgebung<br><small>DICOM</small></div>
+                    <div class="workflow-lane-steps">
+                        <div class="workflow-stage" data-workflow-step="4"><div class="workflow-stage-top"><i data-lucide="list-checks" aria-hidden="true"></i>4 CT → MWL</div><small>C-FIND: Worklist</small></div>
+                        <div class="workflow-flow dicom"><span class="workflow-packet"></span></div>
+                        <div class="workflow-stage" data-workflow-step="5"><div class="workflow-stage-top"><i data-lucide="scan-line" aria-hidden="true"></i>5 CT → PACS</div><small>C-STORE: Bilder</small></div>
+                        <div class="workflow-flow dicom"><span class="workflow-packet"></span></div>
+                        <div class="workflow-stage"><div class="workflow-stage-top"><i data-lucide="archive" aria-hidden="true"></i>PACS</div><small>Bildarchiv</small></div>
+                    </div>
+                </div>
+                <div class="workflow-lane">
+                    <div class="workflow-lane-label">Befundung<br><small>DICOM</small></div>
+                    <div class="workflow-lane-steps">
+                        <div class="workflow-stage" data-workflow-step="6"><div class="workflow-stage-top"><i data-lucide="search" aria-hidden="true"></i>6 Workstation → PACS</div><small>C-FIND: Studie</small></div>
+                        <div class="workflow-flow dicom"><span class="workflow-packet"></span></div>
+                        <div class="workflow-stage" data-workflow-step="7"><div class="workflow-stage-top"><i data-lucide="download" aria-hidden="true"></i>7 Workstation ↔ PACS</div><small>C-MOVE + C-STORE</small></div>
+                        <div class="workflow-flow dicom"><span class="workflow-packet"></span></div>
+                        <div class="workflow-stage"><div class="workflow-stage-top"><i data-lucide="file-text" aria-hidden="true"></i>RIS</div><small>ORU: Befund</small></div>
+                    </div>
+                </div>
+            </div>
+            <div id="workflowDataCaption" class="workflow-data-caption" aria-live="polite"></div>
                         <template id="workflowGraphBase">
 flowchart TB
     classDef system fill:#e3f2fd,stroke:#1565c0,stroke-width:2px,color:#000
@@ -419,7 +527,8 @@ flowchart TB
     Workstation["Workstation"]
 
     ADT["1. HL7 ADT"]
-    ORU["2. HL7 ORU"]
+    QRY["2a. HL7 QRY^Q02"]
+    ORU["2b. HL7 ORU^R01"]
     ORM["3. HL7 ORM"]
     MWL["4. DICOM C-FIND (MWL)"]
     STORE["5. DICOM C-STORE"]
@@ -428,11 +537,12 @@ flowchart TB
 
     class KIS,RIS,LIS,Modality,Workstation system
     class MWLServer,PACS backend
-    class ADT,ORU,ORM hl7
+    class ADT,QRY,ORU,ORM hl7
     class MWL,STORE,QFIND,CMOVE dicom
 
     KIS -.-> ADT -.-> RIS
-    RIS -.-> ORU -.-> LIS
+    RIS -.-> QRY -.-> LIS
+    LIS -.-> ORU -.-> RIS
     RIS -.-> ORM -.-> MWLServer
     MWLServer --> MWL --> Modality
     Modality --> STORE --> PACS
@@ -447,6 +557,7 @@ flowchart TB
     click PACS workflowExplain "PACS"
     click Workstation workflowExplain "Workstation"
     click ADT workflowExplain "HL7 ADT"
+    click QRY workflowExplain "HL7 QRY"
     click ORU workflowExplain "HL7 ORU"
     click ORM workflowExplain "HL7 ORM"
     click MWL workflowExplain "DICOM MWL"
@@ -458,13 +569,13 @@ flowchart TB
                         <div id="workflowMermaid" class="mermaid"></div>
 
                         <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">
-                            <button type="button" data-wf-step="1" style="border:1px solid #cfd8dc; background:#fff; border-radius:999px; padding:4px 10px; cursor:pointer;">1</button>
-                            <button type="button" data-wf-step="2" style="border:1px solid #cfd8dc; background:#fff; border-radius:999px; padding:4px 10px; cursor:pointer;">2</button>
-                            <button type="button" data-wf-step="3" style="border:1px solid #cfd8dc; background:#fff; border-radius:999px; padding:4px 10px; cursor:pointer;">3</button>
-                            <button type="button" data-wf-step="4" style="border:1px solid #cfd8dc; background:#fff; border-radius:999px; padding:4px 10px; cursor:pointer;">4</button>
-                            <button type="button" data-wf-step="5" style="border:1px solid #cfd8dc; background:#fff; border-radius:999px; padding:4px 10px; cursor:pointer;">5</button>
-                            <button type="button" data-wf-step="6" style="border:1px solid #cfd8dc; background:#fff; border-radius:999px; padding:4px 10px; cursor:pointer;">6</button>
-                            <button type="button" data-wf-step="7" style="border:1px solid #cfd8dc; background:#fff; border-radius:999px; padding:4px 10px; cursor:pointer;">7</button>
+                            <button type="button" data-wf-step="1" style="border:1px solid #cfd8dc; background:#fff; color:#263238; border-radius:999px; padding:4px 10px; cursor:pointer;">1</button>
+                            <button type="button" data-wf-step="2" style="border:1px solid #cfd8dc; background:#fff; color:#263238; border-radius:999px; padding:4px 10px; cursor:pointer;">2</button>
+                            <button type="button" data-wf-step="3" style="border:1px solid #cfd8dc; background:#fff; color:#263238; border-radius:999px; padding:4px 10px; cursor:pointer;">3</button>
+                            <button type="button" data-wf-step="4" style="border:1px solid #cfd8dc; background:#fff; color:#263238; border-radius:999px; padding:4px 10px; cursor:pointer;">4</button>
+                            <button type="button" data-wf-step="5" style="border:1px solid #cfd8dc; background:#fff; color:#263238; border-radius:999px; padding:4px 10px; cursor:pointer;">5</button>
+                            <button type="button" data-wf-step="6" style="border:1px solid #cfd8dc; background:#fff; color:#263238; border-radius:999px; padding:4px 10px; cursor:pointer;">6</button>
+                            <button type="button" data-wf-step="7" style="border:1px solid #cfd8dc; background:#fff; color:#263238; border-radius:999px; padding:4px 10px; cursor:pointer;">7</button>
                         </div>
 
                         <div id="workflowExplainPanel" style="display:none; margin-top:10px; padding:10px; border-radius:10px; border:1px solid #eceff1; background:#fafafa;"></div>
@@ -501,6 +612,7 @@ flowchart TB
                         <script type="application/json" id="workflowStateJson">{{ {'current': workflow_current or '', 'next': workflow_next or ''}|tojson }}</script>
                         <script>
                             document.addEventListener('DOMContentLoaded', () => {
+                                if (window.lucide) window.lucide.createIcons();
                                 workflowBindStepButtons();
                                 workflowTraceRender();
                                 const stateEl = document.getElementById('workflowStateJson');
@@ -895,39 +1007,40 @@ flowchart TB
         </div>
 
         <div class="protocol-note" style="margin-top: 10px;">
-            ℹ️ <strong>Hintergrund:</strong> Vor Kontrastmittel-Gabe (KM) muss die Nierenfunktion geprüft werden. Das RIS sendet eine Anfrage ans LIS und erhält ein Resultat (HL7 ORU). Erst danach wird der Auftrag (<code>HL7 ORM</code>) freigegeben.
+            ℹ️ <strong>Hintergrund:</strong> Vor Kontrastmittel-Gabe (KM) muss die Nierenfunktion geprüft werden. Das RIS fragt beim LIS mit <code>HL7 QRY^Q02</code> an und erhält das Resultat als <code>HL7 ORU^R01</code>. Erst danach wird der Auftrag (<code>HL7 ORM</code>) freigegeben.
         </div>
     </div>
 
     <div class="section">
-        <h2>2-4. Durchführung</h2>
+        <h2>4-7. Durchführung und Befundung</h2>
         <div class="tile-grid">
             <div class="tile">
-                <h3>2. Modalität (CT Konsole)</h3>
+                <h3>4-5. Modalität (CT Konsole)</h3>
                 <p>Gehen Sie zur Konsole des CT-Scanners. Der Scanner wird die Arbeitsliste vom RIS abfragen und die Bilder erzeugen.</p>
                 <a href="/modality"><button>CT Konsole öffnen</button></a>
                 <div class="protocol-note">
-                    ℹ️ <strong>Hintergrund:</strong> Die Modalität nutzt <code>DICOM C-FIND</code>, um geplante Untersuchungen abzurufen ("Worklist Pull").
+                    ℹ️ <strong>Schritt 4:</strong> Die Modalität nutzt <code>DICOM C-FIND</code>, um geplante Untersuchungen abzurufen ("Worklist Pull"). <strong>Schritt 5:</strong> Sie sendet Bilder per <code>DICOM C-STORE</code> an das PACS.
                 </div>
             </div>
 
             <div class="tile">
-                <h3>3. Radiologe: Workstation (Query/Retrieve)</h3>
-                <p>Simulieren Sie den Radiologen, der Bilder aus dem PACS abruft ("Pull").</p>
+                <h3>PACS: Archiv und Metadaten</h3>
+                <p>Betrachten Sie gespeicherte Bilder und DICOM-Metadaten im Simulator-PACS.</p>
+                <a href="/pacs"><button style="background: #1565c0;">PACS (SuS) öffnen (gefiltert)</button></a>
+                <div class="protocol-note">
+                    ℹ️ Das PACS speichert die in Schritt 5 gesendeten Instanzen. Die Suche und der Abruf erfolgen anschliessend in den Schritten 6 und 7 an der Workstation.
+                </div>
+            </div>
+
+            <div class="tile">
+                <h3>6-7. Radiologe: Workstation (Query/Retrieve)</h3>
+                <p>Simulieren Sie den Radiologen, der Studien im PACS sucht und Bilder zur Befundung abruft.</p>
                 <a href="/viewer"><button style="background: #388e3c;">Workstation öffnen</button></a>
                 <div class="protocol-note">
-                    ℹ️ <strong>Hintergrund:</strong> Hier demonstriert der Simulator <code>DICOM C-MOVE</code>. Die Workstation fordert das PACS auf, Bilder zu senden.
-                </div>
-            </div>
-
-            <div class="tile">
-                <h3>4. PACS Viewer & Import</h3>
-                <p>Betrachten Sie die gespeicherten Bilder im Orthanc PACS oder importieren Sie echte DICOM-Dateien.</p>
-                <div style="margin-bottom: 10px;">
-                    <a href="/pacs"><button style="background: #1565c0;">PACS (SuS) öffnen (gefiltert)</button></a>
+                    ℹ️ <strong>Schritt 6:</strong> <code>DICOM C-FIND</code> sucht Studien. <strong>Schritt 7:</strong> <code>DICOM C-MOVE</code> fordert den Abruf an; das PACS liefert die Bilder über den C-STORE-Rückkanal.
                 </div>
                 {% if orthanc_public_url %}
-                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <div style="margin-top:10px; display: flex; gap: 10px; flex-wrap: wrap;">
                         <a href="{{ orthanc_public_url }}" target="_blank"><button>Orthanc PACS öffnen</button></a>
                         <a href="{{ orthanc_public_url }}/app/explorer.html#upload" target="_blank"><button style="background: #e65100;">DICOM Daten hochladen</button></a>
                     </div>
@@ -935,9 +1048,9 @@ flowchart TB
                 {% else %}
                     <p class="protocol-note">Hinweis: Auf einem zentralen Server ist Orthanc meist nicht öffentlich verlinkt. (Trainer-Zugriff z.B. per SSH Port-Forwarding.)</p>
                 {% endif %}
-                <div class="protocol-note">
-                    ℹ️ <strong>Hintergrund:</strong> Über die Weboberfläche nutzt Orthanc <code>DICOMWEB (RESTful API)</code> für Uploads. In der Praxis senden Modalitäten jedoch meist direkt via <code>C-STORE</code>.
-                </div>
+                {% if orthanc_public_url %}
+                    <div class="protocol-note">ℹ️ Über die Orthanc-Weboberfläche nutzt Orthanc <code>DICOMweb (RESTful API)</code> für Uploads. In der Praxis senden Modalitäten jedoch meist direkt via <code>C-STORE</code>.</div>
+                {% endif %}
             </div>
         </div>
     </div>
