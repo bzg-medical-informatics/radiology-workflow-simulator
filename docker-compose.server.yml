@@ -56,10 +56,9 @@ services:
       # Defaults are chosen to be safe and to keep Caddy from failing to start
       # if variables are not configured.
       ORTHANC_DOMAIN: "${ORTHANC_DOMAIN:-orthanc.localhost}"
-      # Basic Auth in front of Orthanc (shared credentials)
-      ORTHANC_PROXY_USER: "${ORTHANC_PROXY_USER:-admin}"
-      # Default hash = unknown long random password. Replace via .env on server.
-      ORTHANC_PROXY_PASSHASH: "${ORTHANC_PROXY_PASSHASH:-$$2a$$14$$lezIDF0dmUgYxcMC6gdwk.vyrGseRycf3NJWlhsltfsW5QHhbLvIC}"
+      # PACS uses the same teacher login as the /admin dashboard.
+      ORTHANC_PROXY_USER: "${ADMIN_USER:-admin}"
+      ORTHANC_PROXY_PASSHASH: "${ADMIN_PASSHASH:-$$2a$$14$$lezIDF0dmUgYxcMC6gdwk.vyrGseRycf3NJWlhsltfsW5QHhbLvIC}"
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data

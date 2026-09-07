@@ -115,7 +115,7 @@ Anleitung: [docs/deploy-central-server.md](docs/deploy-central-server.md)
 
 ## Lehrpersonen-Dashboard
 
-Unter `/admin` können Lehrpersonen nach dem Login SuS-Session-Keys generieren und den Lernfortschritt pro Key einsehen. Die Übersicht enthält Patienten, Auftrags- und Untersuchungsstatus, Befunde sowie die letzten protokollierten HL7- und DICOM-Aktionen. Sie ist nur verfügbar, wenn `ADMIN_PASSHASH` (empfohlen, bcrypt) oder `ADMIN_PASSWORD` gesetzt ist; ohne Lehrer-Login werden keine Session-Daten angezeigt.
+Unter `/admin` können Lehrpersonen nach dem Login SuS-Session-Keys generieren und den Lernfortschritt pro Key einsehen. Die Übersicht enthält Patienten, Auftrags- und Untersuchungsstatus, Befunde sowie die letzten protokollierten HL7- und DICOM-Aktionen. Sie ist nur verfügbar, wenn `ADMIN_PASSHASH` (empfohlen, bcrypt) oder `ADMIN_PASSWORD` gesetzt ist; ohne Lehrer-Login werden keine Session-Daten angezeigt. Der gleiche `ADMIN_USER` und `ADMIN_PASSHASH` schützt auch die PACS-Weboberfläche hinter Caddy.
 
 Die Aktivitäten werden je SuS-Code im konfigurierten `DATA_DIR` gespeichert. Bei Docker Compose ist dies das persistente Verzeichnis `./simulator-data`.
 
