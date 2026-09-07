@@ -619,10 +619,12 @@ flowchart TB
                                 const state = stateEl ? JSON.parse(stateEl.textContent || '{}') : { current: '', next: '' };
                                 const cur = String(state.current || '');
                                 const nxt = String(state.next || '');
+                                const stepMatch = cur.match(/^([1-7])[.)]/);
+                                const step = stepMatch ? Number(stepMatch[1]) : 1;
 
-                                if (cur.includes('LIS') || cur.includes('ORU') || cur.toLowerCase().includes('kreatinin')) {
+                                if (step === 2) {
                                     setWorkflowUi(cur || '2. HL7 ORU', nxt || '3. HL7 ORM', 'ORU', 'ORM');
-                                } else if (cur.includes('RIS') || cur.includes('ORM') || cur.toLowerCase().includes('auftrag')) {
+                                } else if (step === 3) {
                                     setWorkflowUi(cur || '3. HL7 ORM', nxt || '4. DICOM C-FIND (MWL)', 'ORM', 'MWL');
                                 } else {
                                     setWorkflowUi(cur || '1. HL7 ADT', nxt || '2. HL7 ORU', 'ADT', 'ORU');
