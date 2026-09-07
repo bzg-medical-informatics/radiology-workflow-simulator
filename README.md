@@ -45,9 +45,9 @@ Das Diagramm zeigt, wie **administrative Daten** (Patient wird aufgenommen), **k
 - **Was passiert technisch?** Das KIS würde typischerweise eine **HL7 ADT**-Nachricht senden (z.B. A01 „Aufnahme“).
 - **Warum ist das wichtig?** Das **RIS** hat dadurch korrekte Stammdaten (Name, PID usw.). Diese Daten sollen später automatisch in Auftrag, Worklist und DICOM-Metadaten landen.
 
-#### 2) HL7 ORU: RIS ↔ LIS (Kreatinin prüfen)
+#### 2) HL7 QRY^Q02 / ORU^R01: RIS ↔ LIS (Kreatinin prüfen)
 - **Was passiert fachlich?** Vor einer CT mit Kontrastmittel muss die **Nierenfunktion** geprüft werden.
-- **Was passiert technisch?** Das RIS fragt den Kreatininwert im **LIS** ab bzw. erhält einen Befund als **HL7 ORU** (Observation Result).
+- **Was passiert technisch?** Das RIS fragt den Kreatininwert mit **HL7 QRY^Q02** beim **LIS** an. Das LIS antwortet mit **HL7 ORU^R01** (Observation Result).
 - **Wie wird das im Simulator veranschaulicht?** Im Dashboard erfasst man zuerst einen Patienten im **KIS** (ADT). Danach kann man über **„RIS → LIS: Kreatinin anfordern“** die Anfrage/Antwort (inkl. ORU-Befund) als Roh-HL7 sehen.
 - **Was sollen SuS verstehen?** Medizinische Entscheidungen (Kontrastmittel ja/nein) hängen oft von Daten aus *anderen* Systemen (Labor) ab.
 
@@ -110,6 +110,12 @@ Wenn Sie möchten, kann ich daraus auch eine kurze **1-Seiten-Zusammenfassung** 
 ## Deployment (zentraler Server)
 
 Anleitung: [docs/deploy-central-server.md](docs/deploy-central-server.md)
+
+## Lehrpersonen-Dashboard
+
+Unter `/admin` können Lehrpersonen nach dem Login SuS-Session-Keys generieren und den Lernfortschritt pro Key einsehen. Die Übersicht enthält Patienten, Auftrags- und Untersuchungsstatus, Befunde sowie die letzten protokollierten HL7- und DICOM-Aktionen. Sie ist nur verfügbar, wenn `ADMIN_PASSHASH` (empfohlen, bcrypt) oder `ADMIN_PASSWORD` gesetzt ist; ohne Lehrer-Login werden keine Session-Daten angezeigt.
+
+Die Aktivitäten werden je SuS-Code im konfigurierten `DATA_DIR` gespeichert. Bei Docker Compose ist dies das persistente Verzeichnis `./simulator-data`.
 
 ## Arbeitsblatt (Aufgabenbeschreibung)
 

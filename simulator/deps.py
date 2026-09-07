@@ -7,8 +7,10 @@ from typing import Optional
 
 try:
     from simlib import admin_auth, dicom_receiver, storage
+    from simlib.students import get_student_code
 except ModuleNotFoundError:  # package mode
     from .simlib import admin_auth, dicom_receiver, storage
+    from .simlib.students import get_student_code
 
 
 def _admin_user() -> str:

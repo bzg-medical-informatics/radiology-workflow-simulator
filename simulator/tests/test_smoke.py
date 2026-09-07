@@ -6,6 +6,7 @@ from pathlib import Path
 
 from simulator.app_factory import create_app
 from simulator.cstore import _identifier_mismatches
+from simulator.simlib import storage
 
 
 def test_welcome_accessible_without_student_code():
@@ -73,3 +74,27 @@ def test_uploaded_dicom_identifiers_match_selected_worklist_item():
 
     assert _identifier_mismatches(Dataset(), 'SUS-TEST-007', 'SUS-TEST-ACC001') == []
     assert _identifier_mismatches(Dataset(), 'SUS-TEST-008', 'SUS-TEST-ACC001') == ['PatientID']
+
+
+def test_admin_dashboard_requires_login_and_shows_session_progress(monkeypatch, tmp_path):
+    monkeypatch.setattr(storage, 'DATA_DIR', str(tmp_path))
+    monkeypatch.setattr(storage, 'SESSIONS_FILE', str(tmp_path / 'sessions.json'))
+    monkeypatch.setattr('simulator.simlib.admin_auth.admin_enabled', lambda: True)
+    storage.save_session_codes(['SUS-TEST'])
+    storage.upsert_patient('SUS-TEST', 'BOND^JAMES', 'SUS-TEST-007')
+    storage.append_activity('SUS-TEST', 'HL7 ADT: Patient aufgenommen', 'PID=SUS-TEST-007')
+
+    app = create_app()
+    app.testing = True
+    client = app.test_client()
+
+    anonymous = client.get('/admin')
+    assert b'Lernfortschritt nach SuS-Session' not in anonymous.data
+
+    with client.session_transaction() as sess:
+        sess['is_admin'] = True
+    response = client.get('/admin')
+    assert response.status_code == 200
+    assert b'Lernfortschritt nach SuS-Session' in response.data
+    assert b'SUS-TEST' in response.data
+    assert b'HL7 ADT: Patient aufgenommen' in response.data
