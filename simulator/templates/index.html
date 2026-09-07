@@ -93,6 +93,12 @@
         .status-line.done { background: #2e7d32; }
         .status-label { font-size: 0.8em; color: #455a64; margin-top: 2px; }
 
+        .patient-track { background:#e3f2fd; border:1px solid #90caf9; border-radius:8px; padding:8px 12px; margin-bottom:14px; font-size:0.9em; }
+        .track-chip { background:#fff; border:1px solid #90caf9; border-radius:4px; padding:1px 6px; }
+        .badge { display:inline-block; font-size:0.68em; font-weight:700; padding:2px 7px; border-radius:4px; margin-left:8px; vertical-align:middle; letter-spacing:0.02em; }
+        .badge-real { background:#e8f5e9; color:#2e7d32; border:1px solid #2e7d32; }
+        .badge-sim { background:#fff3e0; color:#e65100; border:1px solid #e65100; }
+
         .table-scroll {
             overflow: auto;
             border: 1px solid #cfd8dc;
@@ -353,6 +359,19 @@
 <body>
     <h1>Radiologie Workflow Simulator</h1>
 
+    {% if active_patient_track %}
+        <div class="patient-track">
+            <strong>Tracking:</strong>
+            PID <span class="track-chip mono">{{ active_patient_track.pid }}</span>
+            {% if active_patient_track.name %}({{ active_patient_track.name }}){% endif %}
+            {% if active_patient_track.acc %} · Accession <span class="track-chip mono">{{ active_patient_track.acc }}</span>{% endif %}
+            {% if active_patient_track.study_uid %} · StudyInstanceUID <span class="track-chip mono" title="{{ active_patient_track.study_uid }}">…{{ active_patient_track.study_uid[-12:] }}</span>{% endif %}
+            {% if active_patient_track.status %} · Status: {{ active_patient_track.status }}{% endif %}
+        </div>
+    {% endif %}
+
+    <p class="protocol-note"><span class="badge badge-real">ECHT</span> = echtes DICOM-Protokoll gegen den Orthanc-Server. <span class="badge badge-sim">VEREINFACHT</span> = HL7 wird zu Lernzwecken simuliert (kein echtes Interface-Engine-Routing).</p>
+
     <div class="section">
         <h2>SuS Session (zentraler Server)</h2>
         <p class="protocol-note">Setzen Sie hier Ihren SuS-Code. Dann werden PID/Accession intern mit diesem Prefix versehen und die Workstation zeigt standardmässig nur Studien mit diesem Prefix (soft isolation).</p>
@@ -503,7 +522,7 @@ flowchart TB
     </aside>
 
     <div class="section">
-        <h2>System-Check (DICOM C-ECHO)</h2>
+        <h2>System-Check (DICOM C-ECHO)<span class="badge badge-real">ECHT</span></h2>
         <p>Prüfen Sie, ob das PACS erreichbar ist ("Ping").</p>
         <form action="/echo" method="post">
             <button type="submit" style="background: #28a745;">Verbindung testen (C-ECHO)</button>
@@ -634,7 +653,7 @@ flowchart TB
 
         <div class="tile-grid">
             <div class="tile">
-                <h3>1) HL7 ADT: KIS → RIS (Patient aufnehmen)</h3>
+                <h3>1) HL7 ADT: KIS → RIS (Patient aufnehmen)<span class="badge badge-sim">VEREINFACHT</span></h3>
                 <p class="protocol-note">Zuerst Stammdaten erfassen. Das löst ein <code>HL7 ADT</code> Event aus (sichtbar als Roh-Nachricht).</p>
 
                 <form action="/kis/register_patient" method="post">
@@ -684,7 +703,7 @@ flowchart TB
             </div>
 
             <div class="tile">
-                <h3>2) HL7 ORU: RIS ↔ LIS (Kreatinin)</h3>
+                <h3>2) HL7 ORU: RIS ↔ LIS (Kreatinin)<span class="badge badge-sim">VEREINFACHT</span></h3>
                 <p class="protocol-note">Nachdem der Patient erfasst ist, sendet das RIS eine Anfrage ans LIS. Das LIS antwortet mit einem Labor-Resultat (HL7 ORU).</p>
 
                 <label>Patient auswählen (aus KIS):</label>
@@ -716,7 +735,7 @@ flowchart TB
             </div>
 
             <div class="tile">
-                <h3>3) HL7 ORM: RIS (Auftrag freigeben)</h3>
+                <h3>3) HL7 ORM: RIS (Auftrag freigeben)<span class="badge badge-sim">VEREINFACHT</span></h3>
                 <p class="protocol-note">Auftrag freigeben und Worklist-Eintrag erzeugen (nach dem Laborwert).</p>
 
                 <div class="protocol-note" style="margin-top: 6px;">RIS Patientenliste (aus ADT übernommen):</div>
@@ -795,19 +814,31 @@ flowchart TB
 
                 <form action="/create_order" method="post">
                     <label>Patientenname:</label>
-                    <input type="text" id="orderName" name="name" placeholder="wird aus Auswahl übernommen" required>
+                    <input type="text" id="orderName" name="name" placeholder="wird aus Auswahl übernommen" value="{{ confirm_km_pending.name if confirm_km_pending else '' }}" required>
 
                     <label>Patienten-ID (PID):</label>
-                    <input type="text" id="orderPid" name="pid" placeholder="wird aus Auswahl übernommen" required>
+                    <input type="text" id="orderPid" name="pid" placeholder="wird aus Auswahl übernommen" value="{{ confirm_km_pending.pid if confirm_km_pending else '' }}" required>
 
                     <label>Auftragsnummer (Accession Number):</label>
-                    <input type="text" name="acc" placeholder="z.B. ACC001" required>
+                    <input type="text" name="acc" placeholder="z.B. ACC001" value="{{ confirm_km_pending.acc if confirm_km_pending else '' }}" required>
 
                     <label>Untersuchungsbeschreibung:</label>
-                    <input type="text" name="desc" value="CT Abdomen mit KM" required>
+                    <input type="text" name="desc" value="{{ confirm_km_pending.desc if confirm_km_pending else 'CT Abdomen mit KM' }}" required>
+
+                    {% if confirm_km_pending %}
+                        <label style="display:flex; align-items:center; gap:6px; font-weight:normal; background:#fff3e0; border:1px solid #ff9800; border-radius:6px; padding:8px; margin-bottom:10px;">
+                            <input type="checkbox" name="confirm_km" style="width:auto; margin-bottom:0;">
+                            Ich bestätige die Freigabe trotz erhöhtem Kreatinin (Risiko Kontrastmittel-Nephropathie).
+                        </label>
+                    {% endif %}
 
                     <button type="submit">RIS: Auftrag freigeben (HL7 ORM) + Worklist erstellen</button>
                 </form>
+
+                {% if last_orm_hl7 %}
+                    <div class="protocol-note" style="margin-top: 10px;">Letzte HL7 ORM Nachricht:</div>
+                    <pre style="background:#333; color:#0f0; padding:10px; border-radius:8px; font-size:0.8em; overflow-x:auto;">{{ last_orm_hl7 }}</pre>
+                {% endif %}
             </div>
 
             <div class="tile">

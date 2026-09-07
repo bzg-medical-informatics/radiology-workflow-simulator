@@ -66,3 +66,19 @@ def build_hl7_qry_q02(pid: str) -> str:
         f"QRD|{ts}|R|I|{msg_id}|||1^RD|{pid}|RES\r"
         f"QRF|MON|||||RCT^Creatinine\r"
     )
+
+
+def build_hl7_orm_o01(*, pid: str, patient_name: str, accession_number: str, study_desc: str) -> str:
+    """Return a simple HL7 v2.x ORM^O01 message (RIS releases a radiology order to the MWL)."""
+    ts = hl7_timestamp()
+    msg_id = hl7_msg_control_id('ORM')
+    pid = (pid or 'UNKNOWN').strip()
+    patient_name = hl7_sanitize_field(patient_name or '^') or '^'
+    accession_number = hl7_sanitize_field(accession_number or '')
+    study_desc = hl7_sanitize_field(study_desc or '')
+    return (
+        f"MSH|^~\\&|RIS|RADIO|MWL|MWLSRV|{ts}||ORM^O01|{msg_id}|P|2.3\r"
+        f"PID|1||{pid}||{patient_name}\r"
+        f"ORC|NW|{accession_number}\r"
+        f"OBR|1|{accession_number}||CT^{study_desc}"
+    )

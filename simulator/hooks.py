@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 
-from flask import redirect, request, url_for
+from flask import redirect, request, session, url_for
 
 try:
     from blueprint import bp
@@ -15,9 +15,14 @@ except ModuleNotFoundError:
     from .simlib.students import get_student_code
 
 try:
-    from deps import _admin_user, _dicom_log, _is_admin
+    from deps import _admin_user, _dicom_log, _get_patient, _is_admin
 except ImportError:
-    from .deps import _admin_user, _dicom_log, _is_admin
+    from .deps import _admin_user, _dicom_log, _get_patient, _is_admin
+
+try:
+    from mwl import derive_study_uid
+except ImportError:
+    from .mwl import derive_study_uid
 
 
 @bp.app_context_processor
@@ -55,12 +60,30 @@ def _inject_globals():
     if not is_admin:
         orthanc_public_url = ''
 
+    active_patient_track = None
+    active_pid = (session.get('active_pid') or '').strip()
+    if active_pid:
+        record = _get_patient(get_student_code(), active_pid) or {}
+        ex = record.get('last_exam') or {}
+        lab = record.get('last_lab') or {}
+        acc = ex.get('acc') or ''
+        active_patient_track = {
+            'pid': active_pid,
+            'name': record.get('name') or '',
+            'acc': acc,
+            'study_uid': derive_study_uid(acc) if acc else '',
+            'status': ex.get('status') or '',
+            'lab_status': lab.get('status') or '',
+        }
+
     return {
         'student_code': get_student_code(),
         'orthanc_public_url': orthanc_public_url,
         'is_admin': is_admin,
         'admin_user': _admin_user(),
         'dicom_log': _dicom_log(),
+        'last_orm_hl7': session.get('last_orm_hl7', ''),
+        'active_patient_track': active_patient_track,
     }
 
 

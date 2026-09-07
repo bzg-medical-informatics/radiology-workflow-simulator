@@ -150,6 +150,16 @@ def patient_exists(code: str, pid: str) -> bool:
     return False
 
 
+def get_patient(code: str, pid: str) -> Optional[dict]:
+    pid = (pid or '').strip()
+    if not pid:
+        return None
+    for p in load_patients(code):
+        if str((p or {}).get('pid') or '') == pid:
+            return p
+    return None
+
+
 def upsert_patient(code: str, name: str, pid: str) -> None:
     name = (name or '').strip()
     pid = (pid or '').strip()
@@ -213,6 +223,41 @@ def update_patient_last_exam(
             ex['reported_at'] = now
 
         p['last_exam'] = ex
+        p['updated_at'] = now
+        changed = True
+        break
+
+    if changed:
+        save_patients(code, patients)
+
+
+def update_patient_last_lab(
+    code: str,
+    pid: str,
+    *,
+    value: float,
+    unit: str,
+    status: str,
+    color: str,
+) -> None:
+    """Persist the last lab result (e.g. Kreatinin) for a patient (teaching aid)."""
+    pid = (pid or '').strip()
+    if not pid:
+        return
+
+    patients = load_patients(code)
+    now = datetime.datetime.now().isoformat(timespec='seconds')
+    changed = False
+    for p in patients:
+        if str((p or {}).get('pid') or '') != pid:
+            continue
+        p['last_lab'] = {
+            'value': value,
+            'unit': unit,
+            'status': status,
+            'color': color,
+            'updated_at': now,
+        }
         p['updated_at'] = now
         changed = True
         break

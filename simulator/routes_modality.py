@@ -23,19 +23,23 @@ except ImportError:
 try:
     from deps import (
         _dicom_log_append,
+        _get_patient,
         _load_patients,
         _load_reports,
         _patient_exists,
         _reports_index_by_pid,
+        _set_active_pid,
         _update_patient_last_exam,
     )
 except ImportError:
     from .deps import (
     _dicom_log_append,
+    _get_patient,
     _load_patients,
     _load_reports,
     _patient_exists,
     _reports_index_by_pid,
+    _set_active_pid,
     _update_patient_last_exam,
     )
 
@@ -43,6 +47,11 @@ try:
     from mwl import create_dicom_worklist_file, perform_c_find_mwl
 except ImportError:
     from .mwl import create_dicom_worklist_file, perform_c_find_mwl
+
+try:
+    from simlib.hl7 import build_hl7_orm_o01
+except ModuleNotFoundError:
+    from .simlib.hl7 import build_hl7_orm_o01
 
 
 @bp.route('/create_order', methods=['POST'])
@@ -68,6 +77,29 @@ def create_order():
             workflow_next="2. HL7 ORU: RIS ↔ LIS (Kreatinin)",
         )
 
+    needs_contrast = 'km' in (desc or '').lower() or 'kontrastmittel' in (desc or '').lower()
+    lab = (_get_patient(code, pid) or {}).get('last_lab') or {}
+    lab_critical = str(lab.get('status') or '').upper().startswith('CRITICAL')
+    if needs_contrast and lab_critical and request.form.get('confirm_km') != 'on':
+        return render_template(
+            'index.html',
+            msg=(
+                f"⚠️ Achtung: Kreatinin von {pid} ist erhöht ({lab.get('value')} {lab.get('unit')}, {lab.get('status')}). "
+                "Kontrastmittel-Gabe ist riskant (Kontrastmittel-induzierte Nephropathie). "
+                "Bitte unten explizit bestätigen, falls die Untersuchung trotzdem freigegeben werden soll."
+            ),
+            confirm_km_pending={'name': name, 'pid': pid, 'acc': acc, 'desc': desc},
+            patients=_load_patients(code),
+            ris_reports_by_pid=_reports_index_by_pid(code),
+            ris_reports=_load_reports(code) if code else [],
+            last_adt_hl7=session.get('last_adt_hl7', ''),
+            last_lis_request_hl7=session.get('last_lis_request_hl7', ''),
+            last_oru_hl7=session.get('last_oru_hl7', ''),
+            last_lis_summary=session.get('last_lis_summary', None),
+            workflow_current="2. HL7 ORU: RIS ↔ LIS (Kreatinin)",
+            workflow_next="3. HL7 ORM: Auftrag freigeben (RIS)",
+        )
+
     create_dicom_worklist_file(name, pid, acc, desc)
     _update_patient_last_exam(
         code,
@@ -76,6 +108,10 @@ def create_order():
         description=desc,
         status='Auftrag freigegeben',
     )
+    raw_orm_hl7 = build_hl7_orm_o01(pid=pid, patient_name=name, accession_number=acc, study_desc=desc)
+    session['last_orm_hl7'] = raw_orm_hl7
+    session.modified = True
+    _set_active_pid(pid)
     ns = f" (SuS-Code: {code})" if code else ""
     msg = f"✅ Auftrag erfolgreich! HL7 ORM wurde simuliert und ein Worklist-Eintrag für '{name}' erstellt.{ns}"
     return render_template(
@@ -88,6 +124,7 @@ def create_order():
         last_lis_request_hl7=session.get('last_lis_request_hl7', ''),
         last_oru_hl7=session.get('last_oru_hl7', ''),
         last_lis_summary=session.get('last_lis_summary', None),
+        last_orm_hl7=raw_orm_hl7,
         workflow_current="3. HL7 ORM: RIS (Auftrag freigeben)",
         workflow_next="4. DICOM C-FIND (MWL): Worklist abrufen",
     )
@@ -116,6 +153,7 @@ def scan():
     retag = request.form.get('retag') == 'on'
 
     code = get_student_code()
+    _set_active_pid(pid)
 
     _update_patient_last_exam(code, pid, accession_number=acc, status='Untersuchung begonnen')
 
@@ -147,6 +185,7 @@ def scan():
         if summary.get('ok', 0) > 0:
             _update_patient_last_exam(code, pid, accession_number=acc, status='Untersuchung abgeschlossen')
         _dicom_log_append('C-STORE', summary.get('ok', 0) > 0, f"gesendet={summary['sent']}, ok={summary['ok']}, fehlgeschlagen={summary['failed']}")
+        scan_was_real = True
     else:
         status = send_c_store(name, pid, acc)
         msg = f"☢️ Dummy-Scan für {name}. (Hinweis: Für echte Daten bitte DICOM-Dateien hochladen.) Status: {status}."
@@ -155,11 +194,13 @@ def scan():
         if ok:
             _update_patient_last_exam(code, pid, accession_number=acc, status='Untersuchung abgeschlossen')
         _dicom_log_append('C-STORE', ok, f'Dummy-Scan, Status={status}')
+        scan_was_real = False
 
     items = perform_c_find_mwl()
     return render_template(
         'modality.html',
         items=items,
+        scan_was_real=scan_was_real,
         msg=msg,
         worklist_refreshed_at=datetime.datetime.now().strftime('%H:%M:%S'),
         workflow_current="5. DICOM C-STORE: Bilder senden → PACS",

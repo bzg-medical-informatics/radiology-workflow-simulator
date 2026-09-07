@@ -39,6 +39,10 @@ def _patient_exists(code: str, pid: str) -> bool:
     return storage.patient_exists(code, pid)
 
 
+def _get_patient(code: str, pid: str) -> Optional[dict]:
+    return storage.get_patient(code, pid)
+
+
 def _upsert_patient(code: str, name: str, pid: str) -> None:
     storage.upsert_patient(code, name, pid)
 
@@ -58,6 +62,27 @@ def _update_patient_last_exam(
         description=description,
         status=status,
     )
+
+
+def _update_patient_last_lab(
+    code: str,
+    pid: str,
+    *,
+    value: float,
+    unit: str,
+    status: str,
+    color: str,
+) -> None:
+    storage.update_patient_last_lab(code, pid, value=value, unit=unit, status=status, color=color)
+
+
+def _set_active_pid(pid: str) -> None:
+    """Remember the patient currently being worked on (for the cross-page ID-tracking widget)."""
+    pid = (pid or '').strip()
+    if not pid:
+        return
+    session['active_pid'] = pid
+    session.modified = True
 
 
 def _load_reports(code: str) -> list:

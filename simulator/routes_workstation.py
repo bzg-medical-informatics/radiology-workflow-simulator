@@ -28,6 +28,7 @@ try:
         _received_images_for_code,
         _received_study_groups,
         _save_reports,
+        _set_active_pid,
         _update_patient_last_exam,
         _viewer_mark_study_moved,
         _viewer_moved_studies,
@@ -39,6 +40,7 @@ except ImportError:
     _received_images_for_code,
     _received_study_groups,
     _save_reports,
+    _set_active_pid,
     _update_patient_last_exam,
     _viewer_mark_study_moved,
     _viewer_moved_studies,
@@ -140,6 +142,7 @@ def workstation_report():
         reports = reports[-50:]
         _save_reports(code, reports)
         _update_patient_last_exam(code, pid, status='Befundet')
+        _set_active_pid(pid)
 
     return render_template(
         'viewer.html',
