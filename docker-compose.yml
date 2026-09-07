@@ -15,8 +15,8 @@ services:
 
   simulator:
     build: ./simulator
-    ports:
-      - "5000:5000"
+    expose:
+      - "5000"
     volumes:
       - ./worklists:/app/worklists
       - ./simulator-data:/app/data
@@ -29,3 +29,27 @@ services:
       ADMIN_PASSWORD: "${ADMIN_PASSWORD:-}"
     depends_on:
       - orthanc
+
+  caddy:
+    image: caddy:2
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      # Use http://localhost for local development. Set SIM_DOMAIN to a real
+      # hostname to enable Caddy's automatic HTTPS certificates.
+      SIM_DOMAIN: "${SIM_DOMAIN:-http://localhost}"
+      ORTHANC_DOMAIN: "${ORTHANC_DOMAIN:-orthanc.localhost}"
+      ORTHANC_PROXY_USER: "${ORTHANC_PROXY_USER:-admin}"
+      ORTHANC_PROXY_PASSHASH: "${ORTHANC_PROXY_PASSHASH:-$$2a$$14$$lezIDF0dmUgYxcMC6gdwk.vyrGseRycf3NJWlhsltfsW5QHhbLvIC}"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - simulator
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:

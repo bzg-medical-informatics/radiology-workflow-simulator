@@ -88,13 +88,15 @@ Wenn Sie möchten, kann ich daraus auch eine kurze **1-Seiten-Zusammenfassung** 
 ### Windows
 1. Doppelklick auf `start.bat`.
 2. Warten Sie auf die Nachricht "Services started!".
-3. Öffnen Sie Ihren Browser unter [http://localhost:5000](http://localhost:5000).
+3. Öffnen Sie Ihren Browser unter [http://localhost](http://localhost).
 
 ### Mac / Linux
 1. Terminal öffnen.
 2. `chmod +x start.sh` ausführen (nur einmalig nötig).
 3. `./start.sh` ausführen.
-4. Browser öffnen unter [http://localhost:5000](http://localhost:5000).
+4. Browser öffnen unter [http://localhost](http://localhost).
+
+Der Simulator ist in Docker Compose hinter dem Caddy Reverse Proxy erreichbar. Für eine eigene Domain setzen Sie vor dem Start `SIM_DOMAIN=sim.example.org`; Caddy beschafft dann automatisch ein HTTPS-Zertifikat. Die Flask-App selbst ist nicht mehr direkt über Port 5000 veröffentlicht.
 
 ---
 
