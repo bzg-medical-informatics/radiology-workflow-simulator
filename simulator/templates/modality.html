@@ -341,7 +341,8 @@ flowchart TB
     class MWL,STORE,QFIND,CMOVE dicom
 
     KIS -.-> ADT -.-> RIS
-    RIS -.-> ORU -.-> LIS
+    RIS -.-> QRY["2a. HL7 QRY^Q02"] -.-> LIS
+    LIS -.-> ORU -.-> RIS
     RIS -.-> ORM -.-> MWLServer
     MWLServer --> MWL --> Modality
     Modality --> STORE --> PACS
@@ -455,6 +456,14 @@ flowchart TB
                             <a href="/pacs?acc={{ item.AccessionNumber }}"><button type="button" style="background:#1565c0;">PACS Viewer (SuS)</button></a>
                         </div>
 
+                        {% if started_accession != item.AccessionNumber %}
+                        <form action="/scan/start" method="post">
+                            <input type="hidden" name="name" value="{{ item.PatientName }}">
+                            <input type="hidden" name="pid" value="{{ item.PatientID }}">
+                            <input type="hidden" name="acc" value="{{ item.AccessionNumber }}">
+                            <button type="submit" style="margin-top:8px; background:#00838f;">Untersuchung beginnen</button>
+                        </form>
+                        {% else %}
                         <form action="/scan" method="post" enctype="multipart/form-data">
                             <input type="hidden" name="name" value="{{ item.PatientName }}">
                             <input type="hidden" name="pid" value="{{ item.PatientID }}">
@@ -474,6 +483,7 @@ flowchart TB
 
                             <button type="submit" style="margin-top:8px;">DICOM UPLOAD & C-STORE senden</button>
                         </form>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}

@@ -19,6 +19,8 @@ Hinweis: Das sind Musterlösungen. Je nach Daten (PID, Kreatinin, DICOM-Dateien)
 
 ## LIS: Kreatinin prüfen (HL7 ORU)
 
+- **Wie läuft die Kommunikation?** Das RIS sendet zunächst eine `QRY^Q02`-Anfrage an das LIS. Das LIS liefert den Laborwert anschliessend als `ORU^R01` an das RIS zurück.
+
 - **In welchem Segment steht die PID?** Im Segment `PID`.
   - In der gezeigten ORU steht sie typischerweise in `PID` als Patienten-ID Feld.
 - **Wo steht der Kreatininwert?** Im Segment `OBX`.
@@ -27,7 +29,7 @@ Hinweis: Das sind Musterlösungen. Je nach Daten (PID, Kreatinin, DICOM-Dateien)
 
 ## RIS: Auftrag freigeben (HL7 ORM) + Worklist erstellen
 
-- **Welche Auftragsnummer (Accession) wird erzeugt?** Das ist die eingegebene/erzeugte Accession, z.B. `ACC001` (oder ähnlich).
+- **Welche Auftragsnummer (Accession) wird erzeugt?** Das ist die eingegebene/erzeugte Accession, z.B. `ACC001` (oder ähnlich). Im Simulator wird sie mit dem SuS-Code ergänzt, z.B. zu `SUS-ABC-ACC001`, damit Daten verschiedener Gruppen getrennt bleiben.
 - **Wo finde ich PID und OBR?**
   - Patient: Segment `PID` (Patienten-ID und Name)
   - Untersuchung/Auftrag: meist in `ORC` (Order Control) und `OBR` (Order Detail), z.B. Accession im `ORC`/`OBR`.
@@ -51,7 +53,7 @@ Hinweis: Das sind Musterlösungen. Je nach Daten (PID, Kreatinin, DICOM-Dateien)
 - **(0010,0020) PatientID**: entspricht der PID (oft mit SuS-Präfix).
 - **(0008,0050) AccessionNumber**: entspricht dem Auftrag (HL7 ORM).
 - **(0008,0060) Modality**: z.B. `CT`.
-- **(0020,000D) StudyInstanceUID**: eindeutige Studien-ID (deterministisch aus AccessionNumber abgeleitet).
+- **(0020,000D) StudyInstanceUID**: eindeutige Studien-ID. Der Simulator leitet sie für reproduzierbare Übungen deterministisch aus der AccessionNumber ab; in der klinischen Praxis wird sie pro Untersuchung neu und weltweit eindeutig erzeugt.
 - **(0020,000E) SeriesInstanceUID**: eindeutige Serien-ID; pro Scan/Serie verschieden.
 - **(0008,0018) SOPInstanceUID**: eindeutige Instanz-ID; jedes einzelne Bild hat eine eigene.
 - **(0008,0016) SOPClassUID**: gibt den DICOM-Objekttyp an, z.B. `1.2.840.10008.5.1.4.1.1.2` = CT Image Storage.
@@ -89,10 +91,11 @@ Hinweis: Das sind Musterlösungen. Je nach Daten (PID, Kreatinin, DICOM-Dateien)
 
 - **Welche Aktion setzt welchen Status?**
   - **Auftrag freigeben (HL7 ORM)** setzt: **"Auftrag freigegeben"**.
-  - **Scan / Bilder senden (DICOM C-STORE)** setzt zuerst **"Untersuchung begonnen"** und nach erfolgreichem Senden **"Untersuchung abgeschlossen"**.
+  - **Untersuchung beginnen** setzt: **"Untersuchung begonnen"**.
+  - **Bilder senden (DICOM C-STORE)** setzt nach erfolgreichem Senden: **"Untersuchung abgeschlossen"**.
   - **Befund senden (HL7 ORU^R01)** setzt: **"Befundet"**.
-- **Warum können "begonnen" und "abgeschlossen" im Simulator zeitlich sehr nah beieinander liegen?**
-  - Weil der Scan als einzelne Aktion simuliert wird (ein Klick), und das Senden der Instanzen direkt danach erfolgt.
+- **Warum sind "begonnen" und "abgeschlossen" getrennt?**
+  - Die Untersuchung beginnt klinisch vor der Bildübertragung. Erst ein erfolgreicher C-STORE-Transfer schliesst sie im Simulator ab.
 - **Welche IDs helfen bei der eindeutigen Zuordnung?**
   - **PID** (PatientID) für den Patienten.
   - **Accession** (AccessionNumber) für den Auftrag/Worklist.

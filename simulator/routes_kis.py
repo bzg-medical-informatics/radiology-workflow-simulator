@@ -15,9 +15,9 @@ except ModuleNotFoundError:
     from .simlib.students import get_student_code, prefix_for_student
 
 try:
-    from deps import _load_patients, _load_reports, _reports_index_by_pid, _set_active_pid, _upsert_patient
+    from deps import _activity_append, _load_patients, _load_reports, _reports_index_by_pid, _set_active_pid, _upsert_patient
 except ImportError:
-    from .deps import _load_patients, _load_reports, _reports_index_by_pid, _set_active_pid, _upsert_patient
+    from .deps import _activity_append, _load_patients, _load_reports, _reports_index_by_pid, _set_active_pid, _upsert_patient
 
 
 @bp.route('/kis/register_patient', methods=['POST'])
@@ -43,6 +43,7 @@ def kis_register_patient():
 
     pid = prefix_for_student(pid_raw) or 'UNKNOWN'
     _upsert_patient(code, name, pid)
+    _activity_append('HL7 ADT: Patient aufgenommen', f'PID={pid}')
     _set_active_pid(pid)
 
     raw_hl7 = build_hl7_adt_a04(pid=pid, name=name)

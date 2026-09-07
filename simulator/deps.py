@@ -141,6 +141,11 @@ def _dicom_log_append(action: str, ok: bool, detail: str = '') -> None:
     })
     session['dicom_log'] = log[-20:]
     session.modified = True
+    storage.append_activity(get_student_code(), action, detail, ok)
+
+
+def _activity_append(action: str, detail: str = '', ok: bool = True) -> None:
+    storage.append_activity(get_student_code(), action, detail, ok)
 
 
 def _dicom_log() -> list:

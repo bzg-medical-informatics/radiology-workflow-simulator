@@ -25,6 +25,20 @@ def _require_admin():
     return admin_auth.require_admin()
 
 
+def _session_overview(code: str) -> dict:
+    patients = storage.load_patients(code)
+    reports = storage.load_reports(code)
+    activities = storage.load_activities(code)
+    last_activity = activities[-1] if activities else None
+    return {
+        'code': code,
+        'patients': patients,
+        'reports_count': len(reports),
+        'activities': list(reversed(activities[-20:])),
+        'last_activity': last_activity,
+    }
+
+
 @bp.route('/admin', methods=['GET'])
 def admin_home():
     if not _admin_enabled():
@@ -32,7 +46,8 @@ def admin_home():
     if not _is_admin():
         return render_template('admin.html', admin_enabled=True, is_admin=False)
     codes = storage.load_session_codes()
-    return render_template('admin.html', admin_enabled=True, is_admin=True, codes=codes)
+    session_overviews = [_session_overview(code) for code in codes]
+    return render_template('admin.html', admin_enabled=True, is_admin=True, codes=codes, session_overviews=session_overviews)
 
 
 @bp.route('/admin/login', methods=['POST'])

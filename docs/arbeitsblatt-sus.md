@@ -38,6 +38,11 @@ numbersections: true
 - Session-Key eingeben (wird vom Lehrer kommuniziert)
 - Optional: Workflow-Panel rechts öffnen (zeigt aktuellen und nächsten Schritt)
 
+## Simulator-Hinweise
+
+- Die App ergänzt deine PID und AccessionNumber mit deinem SuS-Code, damit Daten verschiedener Gruppen getrennt bleiben. Aus `007` kann daher z.B. `SUS-ABC-007` werden.
+- Die StudyInstanceUID wird im Simulator für dieselbe AccessionNumber reproduzierbar erzeugt. In einem echten DICOM-Workflow erhält jede Untersuchung eine neu erzeugte, weltweit eindeutige StudyInstanceUID.
+
 ## Zugriff auf Orthanc (PACS)
 
 - Zentraler Server (Standard): Orthanc ist nicht öffentlich. Der Lehrer zeigt es ggf. per Screenshare.
@@ -80,6 +85,8 @@ Merksatz: **ADT = Patient**, **ORU = Labor**, **ORM = Auftrag**.
    - Wo steht der Kreatininwert?
    - Was bedeutet ein hoher Wert fachlich (kurz)?
 
+**Kommunikationsweg:** Das RIS fragt den Wert mit `HL7 QRY^Q02` beim LIS an. Das LIS antwortet mit `HL7 ORU^R01`; darin steht der Kreatininwert im Segment `OBX`.
+
 ## RIS: Auftrag freigeben (HL7 ORM) + Worklist erstellen
 
 1) Trage eine Untersuchungsbeschreibung ein (z.B. `CT Abdomen mit KM`).
@@ -110,10 +117,11 @@ OBR|1|ACC001||CT^CT Abdomen
 
 1) Wähle einen Worklist-Eintrag aus (falls die UI das anbietet).
 2) Lade echte DICOM-Dateien hoch (mehrere Dateien oder ZIP).
-3) Starte den Upload/Transfer (C-STORE).
+3) Klicke zuerst auf **"Untersuchung beginnen"** und starte danach den Upload/Transfer (C-STORE).
 4) Beobachte:
    - Wie viele Dateien wurden gesendet?
    - Gab es "skipped" oder "failed" Dateien? Was könnte der Grund sein?
+   - Falls eine Warnung zu PID oder Accession erscheint: Warum wäre das eine gefährliche Verwechslung?
 
 # Aufgabe 5: PACS Check – DICOM Metadaten + Viewer (gefiltert)
 
@@ -182,11 +190,12 @@ Ziel: Du beobachtest im Dashboard, wie sich der **Status der Untersuchung** entl
 2) Suche in der RIS-Tabelle die Spalte **"Status Untersuchung"**.
 3) Beobachte den Status nach diesen Aktionen:
    - Nach **Auftrag freigeben (HL7 ORM)**
+   - Nach **Untersuchung beginnen**
    - Nach **Scan / Bilder senden (DICOM C-STORE)**
    - Nach **Befund senden (HL7 ORU^R01)**
 4) Notiere:
    - Welche Aktion setzt welchen Status?
-   - Warum können "begonnen" und "abgeschlossen" im Simulator zeitlich sehr nah beieinander liegen?
+   - Warum wird die Untersuchung vor dem C-STORE begonnen und erst nach erfolgreichem Versand abgeschlossen?
    - Welche IDs helfen dir bei der eindeutigen Zuordnung (z.B. PID, Accession, StudyInstanceUID)?
 
 # Aufgabe 10: Fehlerfall-Training

@@ -11,6 +11,7 @@ from .util import normalize_student_code, safe_filename_component
 _SESSIONS_LOCK = threading.Lock()
 _PATIENTS_LOCK = threading.Lock()
 _REPORTS_LOCK = threading.Lock()
+_ACTIVITIES_LOCK = threading.Lock()
 
 
 def ensure_data_dir() -> None:
@@ -297,6 +298,55 @@ def save_reports(code: str, reports: list[dict]) -> None:
         'reports': reports or [],
     }
     with _REPORTS_LOCK:
+        try:
+            tmp = path + '.tmp'
+            with open(tmp, 'w', encoding='utf-8') as f:
+                json.dump(payload, f, indent=2, ensure_ascii=False)
+            os.replace(tmp, path)
+        except Exception:
+            pass
+
+
+def activities_file_for_code(code: str) -> str:
+    safe = safe_filename_component(code or '')
+    if not safe or safe == 'item':
+        safe = 'default'
+    return os.path.join(DATA_DIR, f"activities_{safe}.json")
+
+
+def load_activities(code: str) -> list[dict]:
+    ensure_data_dir()
+    path = activities_file_for_code(code)
+    with _ACTIVITIES_LOCK:
+        try:
+            if not os.path.exists(path):
+                return []
+            with open(path, 'r', encoding='utf-8') as f:
+                payload = json.load(f)
+            activities = payload.get('activities', []) if isinstance(payload, dict) else []
+            return activities if isinstance(activities, list) else []
+        except Exception:
+            return []
+
+
+def append_activity(code: str, action: str, detail: str = '', ok: bool = True) -> None:
+    if not code:
+        return
+    activities = load_activities(code)
+    activities.append({
+        'ts': datetime.datetime.now().isoformat(timespec='seconds'),
+        'action': action,
+        'detail': detail,
+        'ok': bool(ok),
+    })
+    activities = activities[-100:]
+    payload = {
+        'updated_at': datetime.datetime.now().isoformat(timespec='seconds'),
+        'count': len(activities),
+        'activities': activities,
+    }
+    path = activities_file_for_code(code)
+    with _ACTIVITIES_LOCK:
         try:
             tmp = path + '.tmp'
             with open(tmp, 'w', encoding='utf-8') as f:

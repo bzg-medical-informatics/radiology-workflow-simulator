@@ -22,6 +22,7 @@ except ImportError:
 
 try:
     from deps import (
+        _activity_append,
         _dicom_log_append,
         _get_patient,
         _load_patients,
@@ -33,6 +34,7 @@ try:
     )
 except ImportError:
     from .deps import (
+    _activity_append,
     _dicom_log_append,
     _get_patient,
     _load_patients,
@@ -101,6 +103,7 @@ def create_order():
         )
 
     create_dicom_worklist_file(name, pid, acc, desc)
+    _activity_append('HL7 ORM: Auftrag freigegeben', f'PID={pid}, Accession={acc}')
     _update_patient_last_exam(
         code,
         pid,
@@ -143,6 +146,37 @@ def modality():
     )
 
 
+def _render_modality(items, **kwargs):
+    return render_template(
+        'modality.html',
+        items=items,
+        worklist_refreshed_at=datetime.datetime.now().strftime('%H:%M:%S'),
+        started_accession=session.get('started_accession', ''),
+        **kwargs,
+    )
+
+
+@bp.route('/scan/start', methods=['POST'])
+def start_scan():
+    name = request.form.get('name')
+    pid = prefix_for_student(request.form.get('pid'))
+    acc = prefix_for_student(request.form.get('acc'))
+    code = get_student_code()
+
+    _set_active_pid(pid)
+    _update_patient_last_exam(code, pid, accession_number=acc, status='Untersuchung begonnen')
+    _activity_append('CT: Untersuchung begonnen', f'PID={pid}, Accession={acc}')
+    session['started_accession'] = acc
+    session.modified = True
+    items = perform_c_find_mwl()
+    return _render_modality(
+        items,
+        msg=f"Untersuchung für {name} begonnen. Danach können die Bilder per C-STORE gesendet werden.",
+        workflow_current="5. Untersuchung begonnen: CT vorbereitet",
+        workflow_next="5. DICOM C-STORE: Bilder senden → PACS",
+    )
+
+
 @bp.route('/scan', methods=['POST'])
 def scan():
     name = request.form.get('name')
@@ -155,7 +189,13 @@ def scan():
     code = get_student_code()
     _set_active_pid(pid)
 
-    _update_patient_last_exam(code, pid, accession_number=acc, status='Untersuchung begonnen')
+    if session.get('started_accession') != acc:
+        return _render_modality(
+            perform_c_find_mwl(),
+            msg="Bitte zuerst \"Untersuchung beginnen\" wählen, bevor Bilder gesendet werden.",
+            workflow_current="4. DICOM C-FIND (MWL): Worklist abrufen",
+            workflow_next="5. Untersuchung beginnen",
+        )
 
     if uploads and any(u and u.filename for u in uploads):
         dicom_paths, temp_dir = _collect_dicom_file_paths_from_uploads(uploads)
@@ -181,9 +221,12 @@ def scan():
                 msg += " Details: " + " | ".join(summary["errors"][:3])
                 if len(summary["errors"]) > 3:
                     msg += f" (+{len(summary['errors']) - 3} weitere)"
+            if summary["identifier_mismatches"]:
+                msg += " ⚠️ Metadatenwarnung: " + " | ".join(summary["identifier_mismatches"][:3])
 
         if summary.get('ok', 0) > 0:
             _update_patient_last_exam(code, pid, accession_number=acc, status='Untersuchung abgeschlossen')
+            session.pop('started_accession', None)
         _dicom_log_append('C-STORE', summary.get('ok', 0) > 0, f"gesendet={summary['sent']}, ok={summary['ok']}, fehlgeschlagen={summary['failed']}")
         scan_was_real = True
     else:
@@ -193,6 +236,7 @@ def scan():
         ok = bool(status and getattr(status, 'Status', None) == 0x0000)
         if ok:
             _update_patient_last_exam(code, pid, accession_number=acc, status='Untersuchung abgeschlossen')
+            session.pop('started_accession', None)
         _dicom_log_append('C-STORE', ok, f'Dummy-Scan, Status={status}')
         scan_was_real = False
 

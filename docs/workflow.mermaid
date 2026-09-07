@@ -32,7 +32,8 @@ end
 
 %% Prozess-Schritte als eigene Knoten (damit Text nicht auf Linien liegt)
 ADT["1) HL7 ADT\nPatientendaten"]
-ORU["2) HL7 ORU\nKreatinin"]
+QRY["2a) HL7 QRY^Q02\nKreatinin anfragen"]
+ORU["2b) HL7 ORU^R01\nKreatinin-Ergebnis"]
 ORM["3) HL7 ORM\nAuftrag"]
 MWL["4) DICOM C-FIND\nWorklist"]
 STORE["5) DICOM C-STORE\nBilder"]
@@ -43,12 +44,13 @@ WSSTORE["(Rückkanal) DICOM C-STORE\nBilder an Workstation"]
 %% Apply Styles
 class KIS,RIS,LIS,Modality,Workstation system
 class MWLServer,PACS backend
-class ADT,ORU,ORM hl7
+class ADT,QRY,ORU,ORM hl7
 class MWL,STORE,QFIND,CMOVE,WSSTORE dicom
 
 %% Datenfluss (HL7 gestrichelt, DICOM durchgezogen)
 KIS -.-> ADT -.-> RIS
-RIS -.-> ORU -.-> LIS
+RIS -.-> QRY -.-> LIS
+LIS -.-> ORU -.-> RIS
 RIS -.-> ORM -.-> MWLServer
 
 MWLServer --> MWL --> Modality

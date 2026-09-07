@@ -17,9 +17,9 @@ except ModuleNotFoundError:
     from .simlib.students import get_student_code, prefix_for_student
 
 try:
-    from deps import _patient_exists, _set_active_pid, _update_patient_last_lab
+    from deps import _activity_append, _patient_exists, _set_active_pid, _update_patient_last_lab
 except ImportError:
-    from .deps import _patient_exists, _set_active_pid, _update_patient_last_lab
+    from .deps import _activity_append, _patient_exists, _set_active_pid, _update_patient_last_lab
 
 
 def _hl7_timestamp() -> str:
@@ -82,6 +82,7 @@ def query_lis():
     }
     session.modified = True
     _update_patient_last_lab(code, pid, value=creatinine, unit='mg/dL', status=status, color=color)
+    _activity_append('HL7 QRY/ORU: Kreatinin abgefragt', f'PID={pid}, Ergebnis={creatinine} mg/dL ({status})')
     _set_active_pid(pid)
 
     return jsonify({

@@ -107,6 +107,16 @@ def _collect_dicom_file_paths_from_uploads(uploads):
     return file_paths, temp_dir
 
 
+def _identifier_mismatches(ds, patient_id: str, accession_number: str) -> list[str]:
+    """Return supplied identifiers that do not match the selected worklist item."""
+    mismatches = []
+    if str(getattr(ds, "PatientID", "") or "") != patient_id:
+        mismatches.append("PatientID")
+    if str(getattr(ds, "AccessionNumber", "") or "") != accession_number:
+        mismatches.append("AccessionNumber")
+    return mismatches
+
+
 def send_c_store_uploaded_files(dicom_paths, *, patient_name, patient_id, accession_number, retag):
     """Send real DICOM instances via C-STORE to Orthanc.
 
@@ -120,6 +130,7 @@ def send_c_store_uploaded_files(dicom_paths, *, patient_name, patient_id, access
         "failed": 0,
         "skipped": 0,
         "errors": [],
+        "identifier_mismatches": [],
     }
 
     if not dicom_paths:
@@ -181,6 +192,12 @@ def send_c_store_uploaded_files(dicom_paths, *, patient_name, patient_id, access
             if not hasattr(ds, "SOPClassUID") or not hasattr(ds, "SOPInstanceUID"):
                 summary["skipped"] += 1
                 continue
+
+            mismatches = _identifier_mismatches(ds, patient_id, accession_number)
+            if mismatches and not retag:
+                summary["identifier_mismatches"].append(
+                    f"{os.path.basename(path)}: {', '.join(mismatches)} stimmt nicht mit dem Worklist-Eintrag überein"
+                )
 
             if retag:
                 ds.PatientName = patient_name

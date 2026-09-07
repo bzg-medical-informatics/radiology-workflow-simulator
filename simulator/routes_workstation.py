@@ -23,6 +23,7 @@ from pydicom.dataset import Dataset
 
 try:
     from deps import (
+        _activity_append,
         _dicom_log_append,
         _load_reports,
         _received_images_for_code,
@@ -35,6 +36,7 @@ try:
     )
 except ImportError:
     from .deps import (
+    _activity_append,
     _dicom_log_append,
     _load_reports,
     _received_images_for_code,
@@ -142,6 +144,7 @@ def workstation_report():
         reports = reports[-50:]
         _save_reports(code, reports)
         _update_patient_last_exam(code, pid, status='Befundet')
+        _activity_append('HL7 ORU: Befund an RIS gesendet', f'PID={pid}, StudyUID={study_uid}')
         _set_active_pid(pid)
 
     return render_template(

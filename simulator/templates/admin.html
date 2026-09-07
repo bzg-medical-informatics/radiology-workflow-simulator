@@ -95,6 +95,47 @@
                 <p class="muted">Noch keine Codes generiert.</p>
             {% endif %}
         </div>
+
+        <div class="section">
+            <h2>Lernfortschritt nach SuS-Session</h2>
+            <p class="muted">Diese Ansicht ist nur nach Lehrer-Login sichtbar. Sie zeigt gespeicherte Aktivitäten, Untersuchungsstatus und Befunde je Session-Key.</p>
+            {% if session_overviews %}
+                {% for overview in session_overviews %}
+                    <details style="background:#fff; border:1px solid #ddd; padding:10px; margin:10px 0;">
+                        <summary><strong>{{ overview.code }}</strong> · Patienten: {{ overview.patients|length }} · Befunde: {{ overview.reports_count }}{% if overview.last_activity %} · Letzte Aktivität: {{ overview.last_activity.ts }} – {{ overview.last_activity.action }}{% else %} · Noch keine Aktivität{% endif %}</summary>
+
+                        {% if overview.patients %}
+                            <h3>Untersuchungen</h3>
+                            <table>
+                                <thead><tr><th>Patient</th><th>PID</th><th>Accession</th><th>Status</th><th>Zuletzt geändert</th></tr></thead>
+                                <tbody>
+                                    {% for patient in overview.patients %}
+                                        {% set exam = patient.last_exam or {} %}
+                                        <tr><td>{{ patient.name }}</td><td>{{ patient.pid }}</td><td>{{ exam.acc or '–' }}</td><td>{{ exam.status or 'Nur aufgenommen' }}</td><td>{{ exam.updated_at or patient.updated_at or patient.created_at or '–' }}</td></tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% endif %}
+
+                        <h3>Aktivitäten (letzte {{ overview.activities|length }})</h3>
+                        {% if overview.activities %}
+                            <table>
+                                <thead><tr><th>Zeit</th><th>Aktion</th><th>Details</th><th>Ergebnis</th></tr></thead>
+                                <tbody>
+                                    {% for activity in overview.activities %}
+                                        <tr><td>{{ activity.ts }}</td><td>{{ activity.action }}</td><td>{{ activity.detail or '–' }}</td><td>{% if activity.ok %}OK{% else %}Fehler{% endif %}</td></tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        {% else %}
+                            <p class="muted">Noch keine Aktivitäten gespeichert.</p>
+                        {% endif %}
+                    </details>
+                {% endfor %}
+            {% else %}
+                <p class="muted">Noch keine SuS-Codes generiert.</p>
+            {% endif %}
+        </div>
     {% endif %}
 </body>
 </html>

@@ -5,6 +5,7 @@ import sys
 from pathlib import Path
 
 from simulator.app_factory import create_app
+from simulator.cstore import _identifier_mismatches
 
 
 def test_welcome_accessible_without_student_code():
@@ -63,3 +64,12 @@ def test_import_app_script_mode():
     )
     assert res.returncode == 0, res.stderr
     assert int(res.stdout.strip().splitlines()[-1]) > 0
+
+
+def test_uploaded_dicom_identifiers_match_selected_worklist_item():
+    class Dataset:
+        PatientID = 'SUS-TEST-007'
+        AccessionNumber = 'SUS-TEST-ACC001'
+
+    assert _identifier_mismatches(Dataset(), 'SUS-TEST-007', 'SUS-TEST-ACC001') == []
+    assert _identifier_mismatches(Dataset(), 'SUS-TEST-008', 'SUS-TEST-ACC001') == ['PatientID']
