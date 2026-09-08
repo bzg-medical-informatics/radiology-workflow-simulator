@@ -330,7 +330,7 @@ flowchart TB
     Workstation["Workstation"]
 
     ADT["1. HL7 ADT"]
-    ORU["2. HL7 ORU"]
+    ORU["2b. HL7 ORU^R01"]
     ORM["3. HL7 ORM"]
     MWL["4. DICOM C-FIND (MWL)"]
     STORE["5. DICOM C-STORE"]
@@ -474,6 +474,7 @@ flowchart TB
                             <input type="hidden" name="name" value="{{ item.PatientName }}">
                             <input type="hidden" name="pid" value="{{ item.PatientID }}">
                             <input type="hidden" name="acc" value="{{ item.AccessionNumber }}">
+                            <input type="hidden" name="desc" value="{{ item.RequestedProcedureDescription }}">
                             <button type="submit" style="margin-top:8px; background:#00838f;">Untersuchung beginnen</button>
                         </form>
                         {% else %}
@@ -481,17 +482,18 @@ flowchart TB
                             <input type="hidden" name="name" value="{{ item.PatientName }}">
                             <input type="hidden" name="pid" value="{{ item.PatientID }}">
                             <input type="hidden" name="acc" value="{{ item.AccessionNumber }}">
+                            <input type="hidden" name="desc" value="{{ item.RequestedProcedureDescription }}">
 
                             <label style="font-size:0.9em; display:block; margin-bottom:6px;">Echte CT-Daten hochladen (ZIP oder mehrere DICOM-Dateien):</label>
                             <input type="file" name="dicom_files" multiple required>
 
                                                         <div class="protocol-note" style="margin-top:6px;">
-                                                            ℹ️ Hinweis: Nutzen Sie für die Lehre möglichst anonymisierte DICOM-Daten. Falls "Metadaten anpassen" aktiviert ist, werden Patient/Accession/StudyUID auf diesen Auftrag gesetzt.
+                                                            ℹ️ Hinweis: Nutzen Sie für die Lehre möglichst anonymisierte DICOM-Daten. Falls "Metadaten anpassen" aktiviert ist, werden Patient/Accession/StudyUID sowie StudyDescription auf diesen Auftrag gesetzt.
                                                         </div>
 
                             <label style="font-size:0.9em; display:block; margin-top:6px;">
                               <input type="checkbox" name="retag" checked>
-                              Metadaten an diesen Worklist-Eintrag anpassen (Patient/Accession/StudyUID)
+                              Metadaten an diesen Worklist-Eintrag anpassen (Patient/Accession/StudyUID/StudyDescription)
                             </label>
 
                             <button type="submit" style="margin-top:8px;">DICOM UPLOAD & C-STORE senden</button>

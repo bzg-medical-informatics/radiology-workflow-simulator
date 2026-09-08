@@ -327,7 +327,8 @@ flowchart TB
     Workstation["Workstation"]
 
     ADT["1. HL7 ADT"]
-    ORU["2. HL7 ORU"]
+    QRY["2a. HL7 QRY^Q02"]
+    ORU["2b. HL7 ORU^R01"]
     ORM["3. HL7 ORM"]
     MWL["4. DICOM C-FIND (MWL)"]
     STORE["5. DICOM C-STORE"]
@@ -336,11 +337,12 @@ flowchart TB
 
     class KIS,RIS,LIS,Modality,Workstation system
     class MWLServer,PACS backend
-    class ADT,ORU,ORM hl7
+    class ADT,QRY,ORU,ORM hl7
     class MWL,STORE,QFIND,CMOVE dicom
 
     KIS -.-> ADT -.-> RIS
-    RIS -.-> ORU -.-> LIS
+    RIS -.-> QRY -.-> LIS
+    LIS -.-> ORU -.-> RIS
     RIS -.-> ORM -.-> MWLServer
     MWLServer --> MWL --> Modality
     Modality --> STORE --> PACS

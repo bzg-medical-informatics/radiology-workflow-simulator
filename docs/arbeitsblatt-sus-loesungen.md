@@ -16,7 +16,7 @@ Hinweis: Dies sind Musterlösungen. Konkrete PatientIDs, AccessionNumbers, Kreat
 
 - **C-FIND:** Die CT-Modalität ruft die Worklist ab. Sie erzeugt den Auftrag nicht selbst.
 - **C-STORE:** Die CT sendet DICOM-Bildinstanzen an das PACS.
-- **Tag-Vergleich:** Mit aktiviertem Retagging werden PatientID, AccessionNumber und StudyInstanceUID an den ausgewählten Worklist-Auftrag angepasst. Ohne Retagging müssen die Originalwerte mit der Worklist übereinstimmen.
+- **Tag-Vergleich:** Mit aktiviertem Retagging werden PatientID, AccessionNumber, StudyInstanceUID und die Untersuchungsbeschreibung (`StudyDescription`) an den ausgewählten Worklist-Auftrag angepasst. Der überweisende Arzt wird in der Simulation ebenfalls gesetzt. Ohne Retagging bleiben die Originalwerte der Datei erhalten und müssen mit der Worklist übereinstimmen.
 - **Sicherheitsrisiko:** Abweichende Kennungen können Bilder dem falschen Patienten oder Auftrag zuordnen.
 
 # Checkpoint 3: PACS und DICOM-Tags
@@ -38,7 +38,7 @@ Hinweis: Dies sind Musterlösungen. Konkrete PatientIDs, AccessionNumbers, Kreat
 # Checkpoint 5: Fehlerfall und Reflexion
 
 - **C-ECHO fehlgeschlagen:** Prüfe Host, Port, AE Title, Netzwerk und ob der DICOM-Dienst läuft.
-- **Worklist leer:** Prüfe zuerst, ob Patient aufgenommen und ein RIS-Auftrag mit AccessionNumber freigegeben wurde.
+- **Worklist leer:** Prüfe zuerst, ob der Patient aufgenommen, ein RIS-Auftrag mit AccessionNumber freigegeben und der richtige SuS-Code gesetzt wurde. Die Worklist ist nach SuS-Code gefiltert.
 - **C-MOVE ohne Empfang:** Prüfe Timing, StudyInstanceUID, Ziel-AE und den C-STORE-Rückkanal. Ein C-ECHO ist ein sinnvoller erster Verbindungstest.
 - **Rote Verbindung im Workflow-Panel:** Sie markiert die Prozessunterbrechung. Der Hinweis „Unterbrechung erkannt“ verweist auf die nächste technische Prüfung.
 

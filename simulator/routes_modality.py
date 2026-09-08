@@ -161,12 +161,14 @@ def start_scan():
     name = request.form.get('name')
     pid = prefix_for_student(request.form.get('pid'))
     acc = prefix_for_student(request.form.get('acc'))
+    desc = (request.form.get('desc') or '').strip()
     code = get_student_code()
 
     _set_active_pid(pid)
     _update_patient_last_exam(code, pid, accession_number=acc, status='Untersuchung begonnen')
     _activity_append('CT: Untersuchung begonnen', f'PID={pid}, Accession={acc}')
     session['started_accession'] = acc
+    session['started_description'] = desc
     session.modified = True
     items = perform_c_find_mwl()
     return _render_modality(
@@ -205,6 +207,7 @@ def scan():
                 patient_name=name,
                 patient_id=pid,
                 accession_number=acc,
+                study_description=(session.get('started_description') or ''),
                 retag=retag,
             )
         finally:
@@ -227,6 +230,7 @@ def scan():
         if summary.get('ok', 0) > 0:
             _update_patient_last_exam(code, pid, accession_number=acc, status='Untersuchung abgeschlossen')
             session.pop('started_accession', None)
+            session.pop('started_description', None)
         _dicom_log_append('C-STORE', summary.get('ok', 0) > 0, f"gesendet={summary['sent']}, ok={summary['ok']}, fehlgeschlagen={summary['failed']}")
         scan_was_real = True
     else:
@@ -237,6 +241,7 @@ def scan():
         if ok:
             _update_patient_last_exam(code, pid, accession_number=acc, status='Untersuchung abgeschlossen')
             session.pop('started_accession', None)
+            session.pop('started_description', None)
         _dicom_log_append('C-STORE', ok, f'Dummy-Scan, Status={status}')
         scan_was_real = False
 

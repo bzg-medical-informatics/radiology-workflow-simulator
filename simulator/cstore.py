@@ -117,7 +117,16 @@ def _identifier_mismatches(ds, patient_id: str, accession_number: str) -> list[s
     return mismatches
 
 
-def send_c_store_uploaded_files(dicom_paths, *, patient_name, patient_id, accession_number, retag):
+def send_c_store_uploaded_files(
+    dicom_paths,
+    *,
+    patient_name,
+    patient_id,
+    accession_number,
+    study_description='',
+    referring_physician_name='Dr. House',
+    retag,
+):
     """Send real DICOM instances via C-STORE to Orthanc.
 
     Returns a summary dict with counters and a small error list.
@@ -216,6 +225,10 @@ def send_c_store_uploaded_files(dicom_paths, *, patient_name, patient_id, access
                 ds.StudyID = accession_number
                 ds.StudyInstanceUID = study_uid
                 ds.Modality = getattr(ds, "Modality", "CT") or "CT"
+                if study_description:
+                    ds.StudyDescription = study_description
+                if referring_physician_name:
+                    ds.ReferringPhysicianName = referring_physician_name
 
             summary["sent"] += 1
 

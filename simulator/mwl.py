@@ -25,6 +25,7 @@ def derive_study_uid(accession_number: str) -> str:
 
 
 def create_dicom_worklist_file(patient_name, patient_id, accession_number, study_desc):
+    os.makedirs(WORKLIST_DIR, exist_ok=True)
     file_meta = FileMetaDataset()
     file_meta.MediaStorageSOPClassUID = '1.2.840.10008.5.1.4.1.1.7'  # Secondary Capture (dummy)
     file_meta.MediaStorageSOPInstanceUID = generate_uid()
