@@ -63,9 +63,15 @@
         .system-detail { display:none; margin:10px 0; padding:10px; border-left:3px solid #1769aa; background:#e5f1fa; color:#163f59; animation:workflowCaptionIn .25s ease-out; }
         .system-detail.is-open { display:flex; gap:8px; }
         .system-detail svg { width:20px; height:20px; flex:0 0 auto; }
-        .status-journey { display:flex; align-items:center; gap:4px; overflow:auto; margin:8px 0 0; }
-        .status-journey-step { flex:1 0 115px; padding:6px; border:1px solid #c9d8d5; background:#fff; color:#557078; font-size:.76em; text-align:center; }
+        .status-journey-label { display:flex; align-items:center; gap:6px; margin:12px 0 5px; color:#17454a; font-size:.84em; font-weight:700; }
+        .status-journey-label svg { width:17px; height:17px; color:#00838f; }
+        .status-journey-label small { color:#557078; font-size:.9em; font-weight:400; }
+        .status-current { margin-left:auto; padding:2px 7px; border:1px solid #00838f; border-radius:999px; background:#e0f7fa; color:#004d40; font-size:.82em; }
+        .status-journey { display:flex; align-items:center; gap:5px; overflow:auto; margin:0; padding:8px; border:1px solid #b7d9d4; border-radius:7px; background:#f7fcfb; }
+        .status-journey-step { flex:1 0 125px; padding:7px 6px; border:1px solid #c9d8d5; border-radius:5px; background:#fff; color:#557078; font-size:.76em; text-align:center; }
+        .status-journey-step.is-done { border-color:#73ad83; background:#e8f5e9; color:#1b5e20; }
         .status-journey-step.is-current { border-color:#00838f; background:#e0f7fa; color:#004d40; font-weight:700; animation:workflowStagePulse 1.5s ease-in-out infinite; }
+        .status-journey-arrow { color:#00838f; font-size:1.1em; font-weight:700; flex:0 0 auto; }
         .workflow-retrieve { display:grid; gap:5px; margin:2px 0 12px; padding:9px; border:1px solid #a5d6a7; border-radius:6px; background:#f1f8e9; }
         .workflow-retrieve[hidden] { display:none; }
         .workflow-retrieve-title { display:flex; align-items:center; gap:6px; font-size:.8em; font-weight:700; color:#1b5e20; }
@@ -517,9 +523,11 @@
             <div class="guided-step {{ 'done' if progress >= 1 else ('ready' if last_lis_summary else '') }}"><strong>3. Auftrag freigeben</strong>{% if progress >= 1 %}Erledigt{% elif last_lis_summary %}Bereit{% else %}Laborwert fehlt{% endif %}</div>
             <div class="guided-step {{ 'done' if progress >= 3 else ('ready' if progress >= 1 else '') }}"><strong>4-5. CT und PACS</strong>{% if progress >= 3 %}Bilder gesendet{% elif progress >= 1 %}Bereit{% else %}Auftrag fehlt{% endif %}</div>
         </div>
+        <div class="status-journey-label"><i data-lucide="activity" aria-hidden="true"></i>Statusspur der Untersuchung <small>Sie läuft von links nach rechts nach Auftrag, CT-Start, Bildversand und Befund.</small><span class="status-current">Aktuell: {{ current_status or 'noch kein Auftrag' }}</span></div>
         <div class="status-journey" aria-label="Status der Untersuchung">
             {% for label in ['Auftrag freigegeben', 'Untersuchung begonnen', 'Untersuchung abgeschlossen', 'Befundet'] %}
-                <div class="status-journey-step {{ 'is-current' if current_status == label else '' }}">{{ loop.index }}. {{ label }}</div>
+                <div class="status-journey-step {{ 'is-done' if progress > loop.index else '' }} {{ 'is-current' if current_status == label else '' }}">{{ loop.index }}. {{ label }}</div>
+                {% if not loop.last %}<span class="status-journey-arrow" aria-hidden="true">→</span>{% endif %}
             {% endfor %}
         </div>
     </div>

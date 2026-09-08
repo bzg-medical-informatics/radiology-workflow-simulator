@@ -1,149 +1,54 @@
 ---
-title: "Lösungen: Radiologie Workflow Simulator (HL7 + DICOM)"
+title: "Lösungen: Radiologie Workflow Simulator"
 numbersections: true
 ---
 
-Hinweis: Das sind Musterlösungen. Je nach Daten (PID, Kreatinin, DICOM-Dateien) können Werte variieren.
+Hinweis: Dies sind Musterlösungen. Konkrete PatientIDs, AccessionNumbers, Kreatininwerte und DICOM-Tags unterscheiden sich zwischen den Gruppen.
 
-## Lernhilfen im Dashboard
+# Checkpoint 1: Patient und Auftrag
 
-- Der Bereich **"Geführter Lernpfad"** zeigt, welche Schritte bereits erledigt sind und welcher nächste Schritt sinnvoll ist.
-- Die **Statusspur** visualisiert: Auftrag freigegeben → Untersuchung begonnen → Untersuchung abgeschlossen → Befundet.
-- **KIS erklärt**, **LIS erklärt** und **RIS erklärt** zeigen pro System Eingabe, Ausgabe und Empfänger der Nachricht.
+- **KIS → RIS:** HL7 `ADT` überträgt Patientenstammdaten, insbesondere Patientenname und `PatientID`.
+- **RIS ↔ LIS:** Das RIS sendet `QRY^Q02` mit der `PatientID`; das LIS antwortet mit `ORU^R01`. Der Kreatininwert steht im Segment `OBX`.
+- **RIS → MWL:** `ORM^O01` überträgt den Auftrag. Die `AccessionNumber` verbindet Auftrag, Worklist und spätere Bildstudie.
+- **Warum braucht die Worklist beide Daten?** Die `PatientID` ordnet den Auftrag dem Patienten zu; die `AccessionNumber` unterscheidet konkrete Untersuchungsaufträge.
 
-# Aufgabe 1: System-Check (DICOM C-ECHO)
+# Checkpoint 2: Worklist und Bildversand
 
-- **Was ist C-ECHO?** Ein DICOM "Ping" (Verification). Damit prüft man, ob eine DICOM-Verbindung technisch funktioniert.
-- **Welche Komponente wird getestet?** Die DICOM-Konnektivität vom Simulator zur Gegenstelle (PACS/Orthanc DICOM Listener) inkl. AE Title/Host/Port.
+- **C-FIND:** Die CT-Modalität ruft die Worklist ab. Sie erzeugt den Auftrag nicht selbst.
+- **C-STORE:** Die CT sendet DICOM-Bildinstanzen an das PACS.
+- **Tag-Vergleich:** Mit aktiviertem Retagging werden PatientID, AccessionNumber und StudyInstanceUID an den ausgewählten Worklist-Auftrag angepasst. Ohne Retagging müssen die Originalwerte mit der Worklist übereinstimmen.
+- **Sicherheitsrisiko:** Abweichende Kennungen können Bilder dem falschen Patienten oder Auftrag zuordnen.
 
-# Aufgabe 2: Verwaltung (HL7) in 3 Schritten
+# Checkpoint 3: PACS und DICOM-Tags
 
-## KIS: Patient aufnehmen (HL7 ADT)
+| DICOM-Tag | Bedeutung |
+|---|---|
+| `PatientID` | Identifiziert den Patienten und muss zur HL7-ADT-Datenübernahme passen. |
+| `AccessionNumber` | Identifiziert den radiologischen Auftrag aus ORM und MWL. |
+| `StudyInstanceUID` | Identifiziert die gesamte Bildstudie im PACS. |
+| `Modality` | Kennzeichnet die bildgebende Modalität, hier typischerweise `CT`. |
 
-- **Welche Eingaben sind Stammdaten?** Patientenname und Patienten-ID (PID). Diese Identitätsdaten sind die Basis für spätere Zuordnung.
-- **Warum müssen sie später in DICOM-Tags wieder auftauchen?** Damit Bilddaten (DICOM) und Verwaltungsdaten (HL7) zum selben Patienten matchen, z.B. in den DICOM-Tags `PatientName` und `PatientID`.
-- **KIS erklärt:** Das KIS sendet Patientenname und PatientID als HL7 ADT an das RIS.
+# Checkpoint 4: Suche, Retrieve und Befund
 
-## LIS: Kreatinin prüfen (HL7 ORU)
+- **C-FIND Study Root:** Die Workstation fragt das PACS nach verfügbaren Studien ab.
+- **C-MOVE:** Die Workstation fordert eine bestimmte Studie anhand ihrer StudyInstanceUID an.
+- **C-STORE Rückkanal:** Das PACS sendet die Bildinstanzen anschliessend aktiv an die Workstation. Darum ist C-MOVE ein Pull mit anschliessendem Push.
+- **Befund:** Die Workstation übermittelt den Befund als `HL7 ORU^R01` an das RIS; er erscheint anschliessend im RIS-Befundbereich des Dashboards.
 
-- **Wie läuft die Kommunikation?** Das RIS sendet zunächst eine `QRY^Q02`-Anfrage an das LIS. Das LIS liefert den Laborwert anschliessend als `ORU^R01` an das RIS zurück.
+# Checkpoint 5: Fehlerfall und Reflexion
 
-- **In welchem Segment steht die PID?** Im Segment `PID`.
-  - In der gezeigten ORU steht sie typischerweise in `PID` als Patienten-ID Feld.
-- **Wo steht der Kreatininwert?** Im Segment `OBX`.
-  - Wert ist im `OBX` im Value-Feld (in der Demo: `OBX|...||<WERT>|mg/dL|...`).
-- **Was bedeutet ein hoher Wert fachlich (kurz)?** Hinweis auf eingeschränkte Nierenfunktion; Kontrastmittelgabe kann riskant sein.
-- **LIS erklärt:** Die PatientID in der QRY-Anfrage ordnet das Ergebnis aus der ORU-Antwort dem richtigen Patienten zu.
+- **C-ECHO fehlgeschlagen:** Prüfe Host, Port, AE Title, Netzwerk und ob der DICOM-Dienst läuft.
+- **Worklist leer:** Prüfe zuerst, ob Patient aufgenommen und ein RIS-Auftrag mit AccessionNumber freigegeben wurde.
+- **C-MOVE ohne Empfang:** Prüfe Timing, StudyInstanceUID, Ziel-AE und den C-STORE-Rückkanal. Ein C-ECHO ist ein sinnvoller erster Verbindungstest.
+- **Rote Verbindung im Workflow-Panel:** Sie markiert die Prozessunterbrechung. Der Hinweis „Unterbrechung erkannt“ verweist auf die nächste technische Prüfung.
 
-## RIS: Auftrag freigeben (HL7 ORM) + Worklist erstellen
+## Protokolle zuordnen
 
-- **Welche Auftragsnummer (Accession) wird erzeugt?** Das ist die eingegebene/erzeugte Accession, z.B. `ACC001` (oder ähnlich). Im Simulator wird sie mit dem SuS-Code ergänzt, z.B. zu `SUS-ABC-ACC001`, damit Daten verschiedener Gruppen getrennt bleiben.
-- **Wo finde ich PID und OBR?**
-  - Patient: Segment `PID` (Patienten-ID und Name)
-  - Untersuchung/Auftrag: meist in `ORC` (Order Control) und `OBR` (Order Detail), z.B. Accession im `ORC`/`OBR`.
-- **RIS erklärt:** Die AccessionNumber entsteht mit dem Auftrag und verknüpft Auftrag, Worklist und DICOM-Studie.
-
-# Aufgabe 3: Modalität (CT) holt Worklist (DICOM C-FIND / MWL)
-
-- **Welche Patientendaten kommen aus der Worklist?** Typisch: PatientName, PatientID, AccessionNumber, Untersuchungsbeschreibung, geplante Modalität.
-- **Welche ID verknüpft HL7 Auftrag/Accession mit der DICOM Worklist?** In der Regel die **AccessionNumber** (DICOM Tag (0008,0050)) bzw. die Auftragsnummer.
-
-# Aufgabe 4: CT-Scan (DICOM C-STORE) – echte DICOM-Dateien senden
-
-- **Wie viele Dateien wurden gesendet?** Anzahl der erfolgreich übertragenen DICOM-Instanzen (hängt vom Upload ab).
-- **Warum können Dateien "skipped" oder "failed" sein?** Typische Gründe:
-  - Datei ist kein DICOM oder hat kaputte Meta-Header
-  - nicht unterstützte Transfer Syntax (komprimiert)
-  - fehlende Pflicht-Tags oder unlesbare Pixel-Daten
-- **Tag-Vergleich: Upload und Worklist:** Bei aktivem Retagging werden PatientID, AccessionNumber und StudyInstanceUID auf den Worklist-Auftrag gesetzt. Ohne Retagging müssen Originalwerte und Worklist-Werte übereinstimmen, sonst besteht das Risiko einer falschen Patienten- oder Auftragszuordnung.
-
-# Aufgabe 5: PACS Check – DICOM Metadaten + Viewer (gefiltert)
-
-- **(0010,0010) PatientName**: entspricht dem im KIS erfassten Namen.
-- **(0010,0020) PatientID**: entspricht der PID (oft mit SuS-Präfix).
-- **(0008,0050) AccessionNumber**: entspricht dem Auftrag (HL7 ORM).
-- **(0008,0060) Modality**: z.B. `CT`.
-- **(0020,000D) StudyInstanceUID**: eindeutige Studien-ID. Der Simulator leitet sie für reproduzierbare Übungen deterministisch aus der AccessionNumber ab; in der klinischen Praxis wird sie pro Untersuchung neu und weltweit eindeutig erzeugt.
-- **(0020,000E) SeriesInstanceUID**: eindeutige Serien-ID; pro Scan/Serie verschieden.
-- **(0008,0018) SOPInstanceUID**: eindeutige Instanz-ID; jedes einzelne Bild hat eine eigene.
-- **(0008,0016) SOPClassUID**: gibt den DICOM-Objekttyp an, z.B. `1.2.840.10008.5.1.4.1.1.2` = CT Image Storage.
-- **(0008,1030) StudyDescription**: Untersuchungsbeschreibung, stammt aus dem RIS-Auftrag (HL7 ORM).
-- **(0008,0090) ReferringPhysicianName**: überweisender Arzt, z.B. `Dr. House` (aus dem Worklist-Eintrag).
-- **(0028,0010) Rows / (0028,0011) Columns**: Bildmatrix, z.B. 512 × 512 Pixel.
-- **(0028,0100) BitsAllocated**: Bit-Tiefe pro Pixel, z.B. 16 Bit bei CT.
-- **(0002,0010) TransferSyntaxUID**: Kodierung der DICOM-Daten, z.B. Implicit VR Little Endian (`1.2.840.10008.1.2`).
-
-## Abgeleitete Serie: "Segmentation (simulated)"
-
-- **Woran erkenne ich eine neue Serie?**
-  - neue `SeriesInstanceUID`
-  - `SeriesDescription` ist "Segmentation (simulated)"
-  - oft auch `ImageType` mit `DERIVED`/`SECONDARY` (je nach Anzeige)
-
-# Aufgabe 6: Workstation – Studien suchen (DICOM C-FIND Study Root)
-
-- **Welche Spalten siehst du?** Typisch: PatientName, PatientID, StudyDate, ModalitiesInStudy.
-- **Findest du deinen Patienten wieder?** Ja, wenn `PatientID`/Name konsistent durch HL7 und DICOM durchgereicht wurde.
-
-# Aufgabe 7: Retrieve (DICOM C-MOVE) + Empfang (DICOM C-STORE Rückkanal)
-
-- **Warum ist C-MOVE ein "Pull", führt aber zu einem "Push"?**
-  - Die Workstation fordert per C-MOVE an (Pull).
-  - Das PACS sendet die Bildinstanzen danach aktiv per C-STORE an die Ziel-AE (Push zur Workstation).
-
-# Aufgabe 8: Befundung auf der Workstation (HL7 ORU^R01)
-
-- **Welche Patientendaten tauchen in der ORU wieder auf?** Im Segment `PID` stehen `PatientID` und `PatientName`.
-- **Wo finde ich die StudyInstanceUID?** In der Demo-ORU steht sie als eigener Eintrag im `OBX`-Segment mit Kennung `STUDYUID`.
-  - Beispiel: `OBX|2|ST|STUDYUID||<StudyInstanceUID>`
-
-# Aufgabe 9: Status der Untersuchung (begonnen / abgeschlossen / befundet)
-
-- **Welche Aktion setzt welchen Status?**
-  - **Auftrag freigeben (HL7 ORM)** setzt: **"Auftrag freigegeben"**.
-  - **Untersuchung beginnen** setzt: **"Untersuchung begonnen"**.
-  - **Bilder senden (DICOM C-STORE)** setzt nach erfolgreichem Senden: **"Untersuchung abgeschlossen"**.
-  - **Befund senden (HL7 ORU^R01)** setzt: **"Befundet"**.
-- **Warum sind "begonnen" und "abgeschlossen" getrennt?**
-  - Die Untersuchung beginnt klinisch vor der Bildübertragung. Erst ein erfolgreicher C-STORE-Transfer schliesst sie im Simulator ab.
-- **Welche IDs helfen bei der eindeutigen Zuordnung?**
-  - **PID** (PatientID) für den Patienten.
-  - **Accession** (AccessionNumber) für den Auftrag/Worklist.
-  - **StudyInstanceUID** für die Studie (Bilder/Befund).
-
-# Aufgabe 10: Fehlerfall-Training
-
-## Fehlerfall A: Worklist ist leer
-
-- **Welche zwei Voraussetzungen müssen erfüllt sein, damit ein Worklist-Eintrag sinnvoll erscheint?**
-  - Patient ist im KIS angelegt (HL7 ADT vorhanden, PID bekannt).
-  - Auftrag ist im RIS freigegeben (HL7 ORM) und hat eine Accession.
-- **Welche Nummer ist für die Zuordnung Auftrag <-> Worklist besonders wichtig (Stichwort: Accession)?**
-  - Die **AccessionNumber** (DICOM (0008,0050)) bzw. die Auftragsnummer aus HL7.
-
-## Fehlerfall B: C-ECHO schlägt fehl (simuliert)
-
-- **Woran erkennst du im Log, dass dieser Versuch fehlgeschlagen ist?**
-  - Der Eintrag im **DICOM Protokoll-Log** zeigt "Fehler" statt "OK", und die Detailspalte nennt den (simulierten) falschen Port bzw. "Association gescheitert".
-- **Workflow-Panel:** Die betroffene Datenverbindung wird rot markiert. Der Hinweis fordert dazu auf, die Verbindung und die Fehlermeldung vor dem nächsten Schritt zu prüfen.
-- **Plausible Ursache in echt:**
-  - Falscher Port/AE-Title, Netzwerkproblem, Firewall, oder der DICOM-Dienst auf der Gegenseite läuft nicht.
-
-## Fehlerfall C: C-MOVE ohne Empfang (Cache bleibt leer)
-
-- **Zwei plausible Ursachen:**
-  - Transfer ist noch nicht fertig (C-MOVE ist asynchron) oder Seite wurde nicht aktualisiert.
-  - Technisch passt das Ziel nicht: Empfänger-AE Title/Host/Port stimmen nicht, oder das PACS kennt die Ziel-AE nicht, daher scheitert der C-STORE Rückkanal.
-  - (Alternativ ebenfalls plausibel) Falsche Studie ausgewählt (StudyInstanceUID passt nicht).
-- **Welche einfache Prüfung zuerst (z.B. C-ECHO)?**
-  - C-ECHO (PACS erreichbar?) und danach die Konfiguration der Ziel-AE prüfen (AE Title/Port) bzw. ob der Store-SCP läuft.
-
-# Aufgabe 11: Reflexion
-
-- Patient aufnehmen: **HL7 ADT**
-- Laborbefund: **HL7 ORU**
-- Auftrag: **HL7 ORM**
-- Worklist abrufen: **DICOM C-FIND (MWL)**
-- Bilddaten senden: **DICOM C-STORE**
-- Studien suchen: **DICOM C-FIND (Study Root)**
-- Retrieve: **DICOM C-MOVE** (mit C-STORE Rückkanal)
+| Handlung | Protokoll |
+|---|---|
+| Patient aufnehmen | HL7 ADT |
+| Laborwert anfordern / erhalten | HL7 QRY^Q02 / ORU^R01 |
+| Auftrag freigeben | HL7 ORM^O01 |
+| Worklist oder Studie suchen | DICOM C-FIND |
+| Bilder senden | DICOM C-STORE |
+| Bilder abrufen | DICOM C-MOVE, danach C-STORE |

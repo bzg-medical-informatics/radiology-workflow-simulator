@@ -1,255 +1,148 @@
 ---
-title: "Arbeitsblatt: Radiologie Workflow Simulator"
+title: "Radiologie Workflow Simulator: Gruppenbegleitblatt"
 numbersections: true
 ---
 
-**Ziel:** Du simulierst den Datenfluss zwischen **KIS, RIS, LIS, MWL, CT, PACS und Workstation** und ordnest zu, welche Informationen über **HL7** und welche über **DICOM** übertragen werden.
+```{=latex}
+\begin{learninggoal}
+Lernziel: Ihr könnt nach der Übung erklären, welche Daten zwischen KIS, RIS, LIS, CT, PACS und Workstation fliessen. Dabei verfolgt ihr PatientID, AccessionNumber und StudyInstanceUID.
+\end{learninggoal}
+```
 
-# Überblick (Workflow)
+# So arbeitet ihr
 
-![Radiologie Workflow](workflow.png){ width=100% height=15cm }
+Öffnet die App: https://orthanc.bohn-teaching.org. Verwendet pro Gruppe einen gemeinsamen Session-Key.
 
+> **Dashboard zuerst:** Der **Geführte Lernpfad** sagt euch, was als Nächstes sinnvoll ist. Die **Statusspur** zeigt den Untersuchungsstatus. Im **Workflow-Panel** seht ihr Sender, Empfänger und Datenfluss.
+
+| Rolle | Aufgabe |
+|---|---|
+| Verwaltung | Schritte 1-3 im Dashboard: KIS, LIS, RIS |
+| Radiologiefachperson | Schritte 4-5: Worklist, CT und Bildversand |
+| Radiologie | Schritte 6-7: Suche, Retrieve und Befund |
+| Beobachtung | IDs, Statusspur und DICOM-Protokoll-Log dokumentieren |
+
+> **Rollenwechsel:** Wechselt nach jedem Checkpoint die sprechende Person. Vor jedem Klick nennt sie: System, Nachricht und wichtigste Kennung.
+
+![Dashboard: Geführter Lernpfad](dashboard-verwaltung.png){ width=82% }
+
+> **Statusspur lesen:** Sie zeigt nacheinander `Auftrag freigegeben`, `Untersuchung begonnen`, `Untersuchung abgeschlossen` und `Befundet`. Der hervorgehobene Eintrag ist der aktuelle Stand eures Falls.
+
+```{=latex}
 \newpage
-
-## Systeme & Abkürzungen (kurz)
-
-| Bereich | Kürzel / Begriff | Bedeutung | Aufgabe im Workflow |
-|---|---|---|---|
-| System | **KIS** | Krankenhaus-Informationssystem | Patientenaufnahme und Stammdaten |
-| System | **RIS** | Radiologie-Informationssystem | Auftrag, Terminierung, Status |
-| System | **LIS** | Labor-Informationssystem | Laborwerte, z.B. Kreatinin |
-| System | **MWL** | Modality Worklist | Auftragsliste für Geräte |
-| System | **Modalität (CT)** | Bildgebendes Gerät | Erzeugt DICOM-Bilder |
-| System | **PACS** | Picture Archiving and Communication System | Bildarchiv, hier: Orthanc |
-| System | **Workstation** | Viewer / Befundungsplatz | Suchen, Laden und Anzeigen von Studien |
-
-| Standard | Kürzel | Bedeutung | Typische Funktion |
-|---|---|---|---|
-| **HL7** | **ADT** | Aufnahme- und Patientendaten | Patient administrativ anlegen |
-| **HL7** | **ORU** | Observation Result | Laborwert/Befund übertragen |
-| **HL7** | **ORM** | Order Message | Radiologie-Auftrag übertragen |
-| **DICOM** | **C-FIND** | Abfrage/Suche | Worklist oder Studien suchen |
-| **DICOM** | **C-STORE** | Speichern/Senden | Bilder an PACS oder Workstation senden |
-| **DICOM** | **C-MOVE** | Retrieve-Anforderung | Bilder aus dem PACS anfordern |
-
-# Vorbereitung
-
-- App öffnen: https://orthanc.bohn-teaching.org
-- Session-Key eingeben (wird vom Lehrer kommuniziert)
-- Optional: Workflow-Panel rechts öffnen (zeigt aktuellen und nächsten Schritt)
-
-## Simulator-Hinweise
-
-- Die App ergänzt deine PID und AccessionNumber mit deinem SuS-Code, damit Daten verschiedener Gruppen getrennt bleiben. Aus `007` kann daher z.B. `SUS-ABC-007` werden.
-- Die StudyInstanceUID wird im Simulator für dieselbe AccessionNumber reproduzierbar erzeugt. In einem echten DICOM-Workflow erhält jede Untersuchung eine neu erzeugte, weltweit eindeutige StudyInstanceUID.
-- **Nummerierung:** Die App zeigt die technischen **Prozessschritte 1-7**: Verwaltung 1-3, Modalität 4-5, Workstation 6-7. Die Überschriften **Aufgabe 1-11** in diesem Arbeitsblatt sind dagegen Arbeitsaufträge und keine zusätzlichen Prozessschritte.
-- **Lernhilfen im Dashboard:** Der Bereich **"Geführter Lernpfad"** zeigt, welcher Schritt als Nächstes sinnvoll ist. Die **Statusspur** zeigt den Weg von Auftrag bis Befundung. Im Workflow-Panel kannst du KIS, LIS und RIS anklicken oder die Buttons **"KIS erklärt"**, **"LIS erklärt"** und **"RIS erklärt"** verwenden.
-
-## Zugriff auf Orthanc (PACS)
-
-- Zentraler Server (Standard): Orthanc ist nicht öffentlich. Der Lehrer zeigt es ggf. per Screenshare.
-- Zentraler Server (optional, wenn vom Lehrer freigeschaltet): Orthanc UI unter der vom Lehrer genannten URL (Browser fragt nach einem Login, den der Lehrer vorgibt)
-
-## SuS-PACS-Ansicht (gefiltert)
-
-- Öffne im Simulator die Seite **/pacs** (Button: "PACS (SuS) öffnen (gefiltert)").
-- Dort siehst du nur Studien, deren `PatientID` mit deinem SuS-Code beginnt, inklusive Metadaten und einfachem Viewer.
-
-# Aufgabe 1: System-Check (DICOM C-ECHO, Vorbereitung)
-
-1) Klicke auf **"Verbindung testen (C-ECHO)"**.
-2) Beobachte die Rückmeldung.
-3) Notiere:
-   - Was ist C-ECHO in einem Satz?
-   - Welche Komponente wird hier getestet?
-4) Prüfe im Dashboard-Abschnitt **"DICOM Protokoll-Log"**, ob dein C-ECHO als "OK" oder "Fehler" eingetragen wurde.
-
-# Aufgabe 2: Verwaltung (Dashboard-Schritte 1-3)
-
-Merksatz: **ADT = Patient**, **ORU = Labor**, **ORM = Auftrag**.
-
-## Dashboard-Schritt 1: KIS - Patient aufnehmen (HL7 ADT)
-
-1) Trage einen Patienten ein:
-   - Patientenname: z.B. `BOND^JAMES`
-   - Patienten-ID (PID): z.B. `007`
-2) Notiere:
-   - Welche Eingaben sind Stammdaten?
-   - Warum müssen sie später in DICOM-Tags wieder auftauchen?
-3) Öffne **"KIS erklärt"**. Notiere: Welche Daten gehen vom KIS weg und an welches System?
-
-## Dashboard-Schritt 2: LIS - Kreatinin prüfen (HL7 QRY/ORU)
-
-1) Klicke auf **"RIS → LIS: Kreatinin anfordern"**.
-2) Lies Kreatinin-Wert und Status.
-3) Scrolle zur angezeigten HL7-Nachricht.
-4) Notiere:
-   - In welchem Segment steht die PID?
-   - Wo steht der Kreatininwert?
-   - Was bedeutet ein hoher Wert fachlich (kurz)?
-
-**Kommunikationsweg:** Das RIS fragt den Wert mit `HL7 QRY^Q02` beim LIS an. Das LIS antwortet mit `HL7 ORU^R01`; darin steht der Kreatininwert im Segment `OBX`.
-
-5) Öffne **"LIS erklärt"**. Vergleiche Anfrage und Antwort: Welche Information muss das RIS angeben, damit das LIS den richtigen Laborwert liefert?
-
-## Dashboard-Schritt 3: RIS - Auftrag freigeben (HL7 ORM) + Worklist erstellen
-
-1) Trage eine Untersuchungsbeschreibung ein (z.B. `CT Abdomen mit KM`).
-2) Klicke auf **"RIS: Auftrag freigeben (HL7 ORM) + Worklist erstellen"**.
-
-3) Beobachte:
-   - Welche Auftragsnummer (Accession) wird erzeugt?
-4) HL7 Analyse:
-   - Finde in der angezeigten ORM-Nachricht die Segmente `PID` und `OBR`.
-5) Öffne **"RIS erklärt"**. Notiere: Welche neue Kennung entsteht in diesem Schritt und wofür wird sie später gebraucht?
-
-Beispiel (verkürzt):
-
-```
-MSH|^~\&|KIS|HOSPITAL|RIS|RADIO|...||ORM^O01|...|P|2.3
-PID|||007||BOND^JAMES
-ORC|NW|ACC001
-OBR|1|ACC001||CT^CT Abdomen
 ```
 
-# Aufgabe 3: Dashboard-Schritt 4 - Modalität (CT) holt Worklist (DICOM C-FIND / MWL)
+## ID-Spickzettel
 
-1) Wechsle zur CT-Seite. Die Modalität fragt beim Laden der Seite automatisch per **DICOM C-FIND** die Worklist ab. Mit dem Button **"Worklist aktualisieren (DICOM C-FIND)"** kannst du die Abfrage jederzeit erneut auslösen.
-2) Beobachte:
-   - Welche Patientendaten kommen aus der Worklist?
-   - Welche ID verknüpft Auftrag/Accession aus HL7 mit der DICOM Worklist?
+| Kennung | Entsteht bei | Prüfen bei |
+|---|---|---|
+| `PatientID` | KIS / HL7 ADT | LIS, Worklist, DICOM-Tags |
+| `AccessionNumber` | RIS / HL7 ORM | Worklist, DICOM-Tags |
+| `StudyInstanceUID` | Bildstudie / C-STORE | PACS, C-MOVE, Befund |
 
-# Aufgabe 4: Dashboard-Schritt 5 - CT-Scan (DICOM C-STORE) - echte DICOM-Dateien senden
+# Checkpoint 1: Patient und Auftrag
 
-1) Wähle einen Worklist-Eintrag aus (falls die UI das anbietet).
-2) Lade echte DICOM-Dateien hoch (mehrere Dateien oder ZIP).
-3) Klicke zuerst auf **"Untersuchung beginnen"** und starte danach den Upload/Transfer (C-STORE).
-4) Beobachte:
-   - Wie viele Dateien wurden gesendet?
-   - Gab es "skipped" oder "failed" Dateien? Was könnte der Grund sein?
-   - Falls eine Warnung zu PID oder Accession erscheint: Warum wäre das eine gefährliche Verwechslung?
-5) Nutze den Bereich **"Tag-Vergleich: Upload und Worklist"**. Vergleiche `Original PatientID` und `Original Accession` mit den Worklist-Werten.
-   - Was passiert bei aktivierter Option **"Metadaten an diesen Worklist-Eintrag anpassen"**?
-   - Warum muss ein abweichender Originalwert vor dem Senden geprüft werden?
+**Dashboard-Schritte 1-3: KIS → RIS, RIS ↔ LIS, RIS → MWL**
 
-# Aufgabe 5: PACS Check nach Dashboard-Schritt 5 - DICOM Metadaten + Viewer (gefiltert)
+1. Erfasst einen Patienten im KIS. Öffnet **„KIS erklärt“** und benennt Sender und Empfänger der ADT-Nachricht.
+2. Fragt das Kreatinin beim LIS an. Öffnet **„LIS erklärt“** und findet die PatientID in der Nachricht.
+3. Gebt den Auftrag im RIS frei. Öffnet **„RIS erklärt“** und notiert die AccessionNumber.
 
-1) Öffne im Simulator die Seite **/pacs**.
-2) Klicke bei deiner Studie auf **Öffnen**, dann bei einer Serie auf **Öffnen**.
-3) Klicke bei einer Instanz auf **Viewer + Tags**, um Bild und Metadaten gemeinsam zu sehen.
-4) Prüfe diese Tags:
-   - (0010,0010) `PatientName`
-   - (0010,0020) `PatientID`
-   - (0008,0050) `AccessionNumber`
-   - (0008,0060) `Modality`
-   - (0020,000D) `StudyInstanceUID`
-   - (0020,000E) `SeriesInstanceUID`
-   - (0008,0018) `SOPInstanceUID`
-   - (0008,0016) `SOPClassUID`
-   - (0008,1030) `StudyDescription`
-   - (0008,0090) `ReferringPhysicianName`
-   - (0028,0010) `Rows` / (0028,0011) `Columns`
-   - (0028,0100) `BitsAllocated`
-   - (0002,0010) `TransferSyntaxUID`
-5) Finde noch andere Tags, die man noch anschauen könnte (z.B. `ImageType`, `SeriesDescription`) und interessant wären. Konsultiere dafür die DICOM-Tag-Dokumentation (z.B. [dicom.innolitics.com](https://dicom.innolitics.com/)).
+```{=latex}
+\begin{tipbox}
+Merke: QRY Q02 fragt einen Laborwert an. ORU R01 liefert ihn zurück. ORM O01 überträgt den radiologischen Auftrag.
+\end{tipbox}
+```
 
-## Abgeleitete Serie: "Segmentation (simulated)"
+**Unsere PatientID:** ____________________  
+**Unsere AccessionNumber:** ____________________  
+**Warum braucht die Worklist beide Daten?** __________________________________________
 
-1) Öffne in **/pacs** eine Serie deiner Studie.
-2) Klicke auf **"Segmentation (simulated) erzeugen"**.
-3) Prüfe danach in der Serienansicht, ob eine neue (abgeleitete) Serie entstanden ist.
-4) Notiere:
-   - Woran erkennst du eine neue Serie (z.B. neue `SeriesInstanceUID`, andere `SeriesDescription`)?
+# Checkpoint 2: Worklist und Bildversand
 
-# Aufgabe 6: Dashboard-Schritt 6 - Workstation: Studien suchen (DICOM C-FIND Study Root)
+**Dashboard-Schritte 4-5: CT → MWL, CT → PACS**
 
-1) Öffne die Workstation/Viewer-Seite.
-2) Schau dir die Trefferliste an.
-3) Notiere:
-   - Welche Spalten siehst du (Patient, Datum, Modalität)?
-   - Findest du deinen Patienten wieder?
+1. Die Radiologiefachperson öffnet die CT-Konsole und aktualisiert die Worklist mit `C-FIND`.
+2. Prüft: Findet ihr die AccessionNumber aus Checkpoint 1 wieder?
+3. Beginnt die Untersuchung. Sendet anschliessend DICOM-Bilder mit `C-STORE` an das PACS.
+4. Nutzt nach echtem Upload den **„Tag-Vergleich: Upload und Worklist“**.
 
-# Aufgabe 7: Dashboard-Schritt 7 - Retrieve (DICOM C-MOVE) + Empfang (DICOM C-STORE Rückkanal)
+```{=latex}
+\begin{safetybox}
+Sicherheitsprüfung: Eine abweichende PatientID oder Accession kann eine falsche Patienten- oder Auftragszuordnung bedeuten. Vergleicht Originalwerte und Worklist-Werte, bevor ihr die Bilder weiterverwendet.
+\end{safetybox}
+```
 
-1) Wähle eine Studie aus und starte **Retrieve (C-MOVE)**.
-2) Warte kurz und beobachte die Empfangsliste.
-3) Notiere:
-   - Warum ist C-MOVE ein "Pull", führt aber zu einem "Push" über den C-STORE Rückkanal?
+**Worklist gefunden?** [ ] Ja  [ ] Nein  
+**C-STORE im Protokoll-Log:** [ ] OK  [ ] Fehler  
+**Welche Kennung wurde im Tag-Vergleich geprüft?** ____________________
 
-# Aufgabe 8: Befundung nach Dashboard-Schritt 7 auf der Workstation (HL7 ORU^R01)
+# Checkpoint 3: PACS und DICOM-Tags
 
-Voraussetzung: Du hast in Aufgabe 7 Bilder empfangen (C-STORE Cache ist nicht leer).
+**Nach Schritt 5: Bilder im Archiv prüfen**
 
-1) Öffne die Workstation-Seite.
-2) Wähle im Bereich "Empfangene Studien" eine Studie aus.
-3) Schreibe einen kurzen Befundtext.
-4) Klicke auf **"Befund senden (HL7 ORU^R01)"**.
-5) Wechsle zum Dashboard und prüfe im Block **"RIS: Befunde (aus Workstation, HL7 ORU)"**:
-   - Ist ein Eintrag hinzugekommen?
-   - Kannst du die HL7 Nachricht über **"HL7 anzeigen"** aufklappen?
-6) Notiere:
-   - Welche Patientendaten tauchen in der ORU wieder auf?
-   - Wo (grob) findest du die `StudyInstanceUID` im Text?
+Öffnet **PACS (SuS)**. Öffnet eure Studie, eine Serie und eine Instanz mit **„Viewer + Tags“**.
 
-# Aufgabe 9: Status der Untersuchung (Dashboard-Schritte 3, 5 und Befundung)
+| DICOM-Tag | Wert in eurer Studie | Passt zur Gruppe? |
+|---|---|---|
+| `PatientID` | | [ ] Ja  [ ] Nein |
+| `AccessionNumber` | | [ ] Ja  [ ] Nein |
+| `StudyInstanceUID` | | [ ] Ja  [ ] Nein |
+| `Modality` | | [ ] Ja  [ ] Nein |
 
-Ziel: Du beobachtest im Dashboard, wie sich der **Status der Untersuchung** entlang des Workflows ändert.
+> **Tipp:** `PatientID` und `AccessionNumber` verbinden Bilddaten mit Verwaltung. Die `StudyInstanceUID` verbindet alle Bilder einer Studie.
 
-1) Gehe ins Dashboard (Hauptmenü).
-2) Suche in der RIS-Tabelle die Spalte **"Status Untersuchung"**.
-3) Beobachte den Status nach diesen Aktionen:
-   - Nach **Auftrag freigeben (HL7 ORM)**
-   - Nach **Untersuchung beginnen**
-   - Nach **Scan / Bilder senden (DICOM C-STORE)**
-   - Nach **Befund senden (HL7 ORU^R01)**
-   - Vergleiche deine Beobachtung mit der **Statusspur** im Dashboard.
-4) Notiere:
-   - Welche Aktion setzt welchen Status?
-   - Warum wird die Untersuchung vor dem C-STORE begonnen und erst nach erfolgreichem Versand abgeschlossen?
-   - Welche IDs helfen dir bei der eindeutigen Zuordnung (z.B. PID, Accession, StudyInstanceUID)?
+# Checkpoint 4: Suche, Retrieve und Befund
 
-# Aufgabe 10: Fehlerfall-Training
+**Dashboard-Schritte 6-7: Workstation → PACS, Workstation ↔ PACS**
 
-Ziel: Ihr übt typische Situationen aus dem Alltag. Nutzt im Dashboard die Kachel **"Fehlerfälle (Training)"** oder den **Workflow-Drawer** als Checkliste.
+1. Die Radiologie sucht eure Studie mit `C-FIND`.
+2. Fordert sie mit `C-MOVE` an und öffnet im Workflow-Panel die Rückkanal-Animation.
+3. Erklärt beide Pfeile: Workstation → PACS und PACS → Workstation.
+4. Erstellt einen kurzen Befund und prüft ihn danach im RIS-Dashboard.
 
-## Fehlerfall A: Worklist ist leer
+![Dashboard: Prozesskarte und Rückkanal](dashboard-workflow.png){ width=55% }
 
-1) Geht zur CT-Seite und ruft die Worklist ab.
-2) Wenn die Liste leer ist (oder ihr es provozieren wollt): Prüft, ob ihr wirklich einen Auftrag freigegeben habt (HL7 ORM).
-3) Notiere:
-   - Welche zwei Voraussetzungen müssen erfüllt sein, damit ein Worklist-Eintrag sinnvoll erscheint?
-   - Welche Nummer ist für die Zuordnung Auftrag <-> Worklist besonders wichtig (Stichwort: Accession)?
+**C-MOVE bedeutet:** _________________________________________________________________  
+**C-STORE im Rückkanal bedeutet:** ___________________________________________________  
+**Wo erscheint der Befund nach dem Senden?** _________________________________________
 
-## Fehlerfall B: C-ECHO schlägt fehl (simuliert)
+# Checkpoint 5: Fehlerfall und Reflexion
 
-1) Aktiviere im Dashboard bei "Verbindung testen (C-ECHO)" die Checkbox **"Fehler simulieren (falscher Port)"** und klicke erneut.
-2) Beobachte die Fehlermeldung und den Eintrag im **DICOM Protokoll-Log**.
-3) Öffne das Workflow-Panel. Welche Verbindung ist rot dargestellt? Was sagt der Hinweis **"Unterbrechung erkannt"** als nächsten Schritt?
-4) Notiert:
-   - Woran erkennst du im Log, dass dieser Versuch fehlgeschlagen ist?
-   - Was wäre in echt eine plausible Ursache für so einen Fehler (z.B. falscher Port/AE-Title, Netzwerk, Dienst nicht gestartet)?
+Wählt einen Fehlerfall im Dashboard:
 
-## Fehlerfall C: C-MOVE ohne Empfang (Cache bleibt leer)
+- **C-ECHO fehlgeschlagen:** falscher Port simulieren.
+- **Worklist leer:** prüfen, ob der RIS-Auftrag inklusive Accession freigegeben wurde.
+- **C-MOVE ohne Empfang:** zuerst kurz warten, dann C-ECHO sowie Ziel-AE prüfen.
 
-1) Startet in der Workstation ein Retrieve (C-MOVE).
-2) Wenn im Cache nichts auftaucht: Wartet kurz und aktualisiert die Workstation-Seite.
-3) Notiere (konzeptionell):
-   - Nenne zwei plausible Ursachen, warum nach einem C-MOVE keine Bilder im Empfangs-Cache erscheinen.
-   - Welche einfache Prüfung würdest du als erstes machen (z.B. C-ECHO)?
+1. Öffnet das Workflow-Panel. Welche Verbindung ist rot markiert?
+2. Nutzt den Hinweis **„Unterbrechung erkannt“** und nennt eure erste sinnvolle Prüfung.
+3. Prüft zum Schluss den **Geführten Lernpfad** und die **Statusspur**.
 
-# Aufgabe 11: Reflexion
+## Gruppenfazit
 
-1) Ordne die Protokolle zu:
-- Patient aufnehmen: ___
-- Laborbefund: ___
-- Auftrag: ___
-- Worklist abrufen: ___
-- Bilddaten senden: ___
-- Studien suchen: ___
-- Retrieve: ___
+**Der wichtigste Datenübergabepunkt war:**
 
-2) Nutze das **Quiz** am Ende des Dashboards, um deine Zuordnung sofort zu überprüfen.
+________________________________________________________________________________
 
-3) Vergleiche deine Session im **Geführten Lernpfad**: Welcher Schritt war am schwierigsten und warum?
+________________________________________________________________________________
 
-4) Was war für dich neu oder überraschend?
+________________________________________________________________________________
+
+**Das hat uns vor einer Fehlzuordnung geschützt:**
+
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+**Das möchten wir noch klären:**
+
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+________________________________________________________________________________
+
+**Abschluss:** Nutzt das Quiz am Ende des Dashboards als Selbstcheck. Vergleicht anschliessend eure Antworten in der Gruppe.

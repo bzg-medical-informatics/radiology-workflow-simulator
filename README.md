@@ -130,9 +130,8 @@ Die komplette Aufgabenbeschreibung für Lernende ist zentral im Arbeitsblatt:
 Wenn Sie das Arbeitsblatt als PDF brauchen (z.B. zum Ausdrucken), können Sie es mit Pandoc + XeLaTeX rendern:
 
 - Arbeitsblatt:
-  - `pandoc --from=markdown --number-sections --pdf-engine=xelatex --resource-path=docs -V documentclass=article -V fontsize=11pt -V papersize=a4 -V geometry:margin=2.5cm -V mainfont="DejaVu Serif" -V monofont="DejaVu Sans Mono" -V colorlinks=true -V linkcolor=black -V urlcolor=black -o docs/arbeitsblatt-sus.pdf docs/arbeitsblatt-sus.md`
-- Lösungen:
-  - `pandoc --from=markdown --number-sections --pdf-engine=xelatex --resource-path=docs -V documentclass=article -V fontsize=11pt -V papersize=a4 -V geometry:margin=2.5cm -V mainfont="DejaVu Serif" -V monofont="DejaVu Sans Mono" -V colorlinks=true -V linkcolor=black -V urlcolor=black -o docs/arbeitsblatt-sus-loesungen.pdf docs/arbeitsblatt-sus-loesungen.md`
+  - `./build-arbeitsblatt.sh` erzeugt Arbeitsblatt und Musterlösungen.
+  - Voraussetzungen auf Ubuntu: `sudo apt install pandoc texlive-xetex texlive-latex-extra fonts-dejavu`
 
 ## Technische Details für Dozenten
 
