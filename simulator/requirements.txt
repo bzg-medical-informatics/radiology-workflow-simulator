@@ -5,3 +5,8 @@ requests
 numpy
 Pillow
 bcrypt
+pylibjpeg
+pylibjpeg-libjpeg
+pylibjpeg-openjpeg
+pylibjpeg-rle
+pyjpegls
