@@ -167,8 +167,10 @@
 
       xhr.addEventListener('load', () => {
         if (xhr.status >= 200 && xhr.status < 400) {
-          const target = xhr.responseURL || '/modality';
-          window.location.assign(target);
+          // /scan is POST-only and returns the rendered modality page directly.
+          // Never navigate back to xhr.responseURL here, because that would issue
+          // a GET /scan and result in HTTP 405 Method Not Allowed.
+          window.location.assign('/modality');
           return;
         }
         setError(panel, `Serverfehler beim Upload (HTTP ${xhr.status}).`);
