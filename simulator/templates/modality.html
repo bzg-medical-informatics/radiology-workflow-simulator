@@ -487,9 +487,9 @@ flowchart TB
                             <label style="font-size:0.9em; display:block; margin-bottom:6px;">Echte CT-Daten hochladen (ZIP oder mehrere DICOM-Dateien):</label>
                             <input type="file" name="dicom_files" multiple required>
 
-                                                        <div class="protocol-note" style="margin-top:6px;">
-                                                            ℹ️ Hinweis: Nutzen Sie für die Lehre möglichst anonymisierte DICOM-Daten. Falls "Metadaten anpassen" aktiviert ist, werden Patient/Accession/StudyUID sowie StudyDescription auf diesen Auftrag gesetzt.
-                                                        </div>
+                            <div class="protocol-note" style="margin-top:6px;">
+                                ℹ️ Hinweis: Nutzen Sie für die Lehre möglichst anonymisierte DICOM-Daten. Falls "Metadaten anpassen" aktiviert ist, werden Patient/Accession/StudyUID sowie StudyDescription auf diesen Auftrag gesetzt.
+                            </div>
 
                             <label style="font-size:0.9em; display:block; margin-top:6px;">
                               <input type="checkbox" name="retag" checked>
@@ -517,5 +517,6 @@ flowchart TB
         <p><i>Haben Sie im RIS bereits einen Auftrag freigegeben?</i></p>
         {% endif %}
     </div>
+    <script src="{{ url_for('static', filename='upload-progress.js') }}"></script>
 </body>
 </html>

@@ -565,19 +565,36 @@ def pacs_viewer(study_id: str):
 
 @bp.route('/pacs/instances/<instance_id>/preview.png')
 def pacs_instance_preview(instance_id: str):
-    # Best-effort: render as PNG. If it fails, return a readable error.
+    """Return a browser-friendly PNG preview for a DICOM instance."""
+    # Orthanc is the primary renderer: it already owns the stored instance and
+    # supports common DICOM transfer syntaxes through its imaging plugins.
     try:
-        dicom_bytes = _orthanc_get_bytes(f'/instances/{instance_id}/file')
-        png = _render_dicom_png(dicom_bytes)
+        png = _orthanc_get_bytes(f'/instances/{instance_id}/preview')
+        if not png.startswith(b'\x89PNG\r\n\x1a\n'):
+            raise ValueError('Orthanc preview response is not a PNG image')
         resp = make_response(png)
         resp.headers['Content-Type'] = 'image/png'
         resp.headers['Cache-Control'] = 'no-store'
+        resp.headers['X-DICOM-Preview-Renderer'] = 'orthanc'
         return resp
-    except Exception as e:
-        return make_response(
-            f"Cannot render this DICOM instance as PNG ({e}). If this is a compressed DICOM (e.g. JPEG2000), upload an uncompressed export.",
-            415,
-        )
+    except Exception as orthanc_error:
+        # Fallback for installations where Orthanc preview rendering is not
+        # available: let pydicom decode the original instance locally.
+        try:
+            dicom_bytes = _orthanc_get_bytes(f'/instances/{instance_id}/file')
+            png = _render_dicom_png(dicom_bytes)
+            resp = make_response(png)
+            resp.headers['Content-Type'] = 'image/png'
+            resp.headers['Cache-Control'] = 'no-store'
+            resp.headers['X-DICOM-Preview-Renderer'] = 'pydicom'
+            return resp
+        except Exception as pydicom_error:
+            return make_response(
+                'Cannot render this DICOM instance as PNG. '
+                f'Orthanc preview failed: {orthanc_error}; '
+                f'pydicom failed: {pydicom_error}',
+                415,
+            )
 
 
 @bp.route('/pacs/instances/<instance_id>/edit_metadata', methods=['POST'])
