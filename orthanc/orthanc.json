@@ -12,7 +12,7 @@
   },
 
   "Plugins": [
-    "/usr/local/share/orthanc/plugins/libModalityWorklists.so"
+    "/usr/local/share/orthanc/plugins/"
   ],
 
   "Worklists": {
