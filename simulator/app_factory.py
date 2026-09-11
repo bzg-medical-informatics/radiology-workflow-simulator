@@ -54,13 +54,27 @@ def create_app() -> Flask:
         return redirect('/modality')
 
     @app.after_request
-    def add_dashboard_fix_script(response):
-        """Load small dashboard-only interaction fixes on the home page."""
-        if request.path == '/' and response.mimetype == 'text/html' and not response.is_streamed:
-            html = response.get_data(as_text=True)
-            script_tag = '<script src="/static/dashboard-fixes.js"></script>'
-            if script_tag not in html and '</body>' in html:
-                response.set_data(html.replace('</body>', f'{script_tag}\n</body>', 1))
+    def add_interaction_scripts(response):
+        """Load shared workflow navigation plus dashboard-only interaction fixes."""
+        if response.mimetype != 'text/html' or response.is_streamed:
+            return response
+
+        html = response.get_data(as_text=True)
+        if '</body>' not in html:
+            return response
+
+        script_tags = []
+        if request.path == '/':
+            dashboard_tag = '<script src="/static/dashboard-fixes.js"></script>'
+            if dashboard_tag not in html:
+                script_tags.append(dashboard_tag)
+
+        workflow_tag = '<script src="/static/workflow-navigation.js"></script>'
+        if workflow_tag not in html:
+            script_tags.append(workflow_tag)
+
+        if script_tags:
+            response.set_data(html.replace('</body>', '\n'.join(script_tags) + '\n</body>', 1))
         return response
 
     return app
