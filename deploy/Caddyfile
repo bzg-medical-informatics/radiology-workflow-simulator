@@ -18,20 +18,27 @@
 
 # Public Orthanc/PACS UI on a separate hostname.
 #
-# Orthanc itself stays bound to localhost/Docker internally. Caddy is the only
-# public entry point. Browsing studies and images does not require a password,
-# while mutating HTTP methods are blocked at the reverse proxy so public users
-# cannot upload, modify or delete PACS data through the Orthanc REST API/UI.
-#
-# The simulator is unaffected by this restriction because it talks to Orthanc
-# directly over the internal Docker network (http://orthanc:8042).
+# Orthanc Explorer uses POST for read-only database queries such as /tools/find,
+# so POST cannot be blocked globally. We allow the known read-only query endpoints
+# required by the UI, while blocking all other POST requests plus PUT/PATCH/DELETE.
+# The simulator is unaffected because it talks to Orthanc directly over the
+# internal Docker network (http://orthanc:8042).
 {$ORTHANC_DOMAIN:orthanc.localhost} {
   encode gzip
 
-  @orthanc_write {
-    method POST PUT PATCH DELETE
+  # Always block methods that mutate existing Orthanc resources.
+  @orthanc_mutating_methods {
+    method PUT PATCH DELETE
   }
-  respond @orthanc_write "Public Orthanc access is read-only." 403
+  respond @orthanc_mutating_methods "Public Orthanc access is read-only." 403
+
+  # POST is also used by Orthanc for read-only searches. Permit only those
+  # endpoints needed to browse/search studies; block every other public POST.
+  @orthanc_blocked_post {
+    method POST
+    not path /tools/find /tools/lookup
+  }
+  respond @orthanc_blocked_post "Public Orthanc access is read-only." 403
 
   reverse_proxy orthanc:8042
 }
