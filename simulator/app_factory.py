@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from flask import Flask, request
+from flask import Flask, redirect, request
 
 try:
     from simlib import storage
@@ -47,6 +47,11 @@ def create_app() -> Flask:
     storage.maybe_auto_generate_sessions()
 
     app.register_blueprint(bp)
+
+    @app.get('/scan')
+    def scan_get_compat():
+        """Handle cached/legacy upload JS that navigates back to GET /scan."""
+        return redirect('/modality')
 
     @app.after_request
     def add_dashboard_fix_script(response):
