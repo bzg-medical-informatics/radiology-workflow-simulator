@@ -2,8 +2,7 @@ services:
   orthanc:
     image: jodogne/orthanc-plugins
     command: /run/secrets/orthanc.json
-    # IMPORTANT: Do not expose Orthanc publicly on a central server.
-    # Trainer access: SSH port-forward to localhost:8042 if needed.
+    # Orthanc ports stay bound to localhost. Public browser access goes through Caddy.
     ports:
       - "127.0.0.1:4242:4242"
       - "127.0.0.1:8042:8042"
@@ -32,13 +31,12 @@ services:
       AUTO_GENERATE_SESSIONS: "${AUTO_GENERATE_SESSIONS:-20}"
       # Set this in your server environment (see docs/deploy-central-server.md)
       FLASK_SECRET_KEY: "${FLASK_SECRET_KEY}"
-      # Enables /admin for generating SuS session codes
-      # Preferred: bcrypt (same format as `caddy hash-password`)
+      # Enables the password-protected /admin dashboard.
+      # This login is independent from the public read-only Orthanc/PACS hostname.
       ADMIN_USER: "${ADMIN_USER:-admin}"
       ADMIN_PASSHASH: "${ADMIN_PASSHASH:-}"
       # Legacy (plaintext) fallback; prefer ADMIN_PASSHASH
       ADMIN_PASSWORD: "${ADMIN_PASSWORD:-}"
-      # Leave empty by default on central server (Orthanc not publicly linked)
       ORTHANC_PUBLIC_URL: "${ORTHANC_PUBLIC_URL}"
     depends_on:
       - orthanc
@@ -52,13 +50,8 @@ services:
     environment:
       # Public hostname for the simulator (e.g. sim.example.org)
       SIM_DOMAIN: "${SIM_DOMAIN:-localhost}"
-      # Optional: reverse-proxy Orthanc behind Caddy on a separate hostname.
-      # Defaults are chosen to be safe and to keep Caddy from failing to start
-      # if variables are not configured.
+      # Public read-only Orthanc/PACS hostname. No Basic Auth is required here.
       ORTHANC_DOMAIN: "${ORTHANC_DOMAIN:-orthanc.localhost}"
-      # PACS uses the same teacher login as the /admin dashboard.
-      ORTHANC_PROXY_USER: "${ADMIN_USER:-admin}"
-      ORTHANC_PROXY_PASSHASH: "${ADMIN_PASSHASH:-$$2a$$14$$lezIDF0dmUgYxcMC6gdwk.vyrGseRycf3NJWlhsltfsW5QHhbLvIC}"
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
       - caddy_data:/data
