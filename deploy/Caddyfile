@@ -10,28 +10,28 @@
 {$SIM_DOMAIN:localhost} {
   encode gzip
 
-  # Serve the Flask simulator (only public service)
+  # Serve the Flask simulator.
+  # The /admin area remains protected by the simulator's own ADMIN_USER/
+  # ADMIN_PASSHASH login and is intentionally independent from Orthanc access.
   reverse_proxy simulator:5000
 }
 
-# Optional (trainer access): Expose Orthanc behind Caddy on a separate hostname.
-# Using a subdomain is the robust option because Orthanc's web UI uses absolute
-# paths (hosting under a subpath like /orthanc typically breaks navigation).
+# Public Orthanc/PACS UI on a separate hostname.
 #
-# Configure these env vars for the Caddy container:
-# - ORTHANC_DOMAIN          e.g. orthanc.example.org
-# - ORTHANC_PROXY_USER      e.g. trainer
-# - ORTHANC_PROXY_PASSHASH  bcrypt hash (generate via: caddy hash-password)
+# Orthanc itself stays bound to localhost/Docker internally. Caddy is the only
+# public entry point. Browsing studies and images does not require a password,
+# while mutating HTTP methods are blocked at the reverse proxy so public users
+# cannot upload, modify or delete PACS data through the Orthanc REST API/UI.
+#
+# The simulator is unaffected by this restriction because it talks to Orthanc
+# directly over the internal Docker network (http://orthanc:8042).
 {$ORTHANC_DOMAIN:orthanc.localhost} {
   encode gzip
 
-  # Simple access control (shared credentials) via bcrypt hash.
-  # Configure via env vars on the server:
-  # - ORTHANC_PROXY_USER
-  # - ORTHANC_PROXY_PASSHASH  (generate via: caddy hash-password)
-  basic_auth {
-    {$ORTHANC_PROXY_USER} {$ORTHANC_PROXY_PASSHASH}
+  @orthanc_write {
+    method POST PUT PATCH DELETE
   }
+  respond @orthanc_write "Public Orthanc access is read-only." 403
 
   reverse_proxy orthanc:8042
 }
