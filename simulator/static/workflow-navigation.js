@@ -124,6 +124,15 @@
   }
 
   function setupHomeOverviewNavigation() {
+    const phaseTargets = [
+      '/#workflow-kis',
+      '/modality',
+      '/viewer',
+    ];
+    document.querySelectorAll('.workflow-phase').forEach((phase, index) => {
+      makeNavigable(phase, phaseTargets[index], `Workflow-Phase ${index + 1} öffnen`);
+    });
+
     const guidedTargets = [
       '/#workflow-kis',
       '/#workflow-lis',
