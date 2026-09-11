@@ -73,12 +73,18 @@ summary { cursor: pointer; color: #17454a; }
 .learning-step svg { width:16px; height:16px; }
 .empty-state { padding:18px; border:1px dashed #9dbab5; border-radius:6px; background:#f8fcfb; color:var(--muted); text-align:center; }
 
-/* CT console: keep the upload/action column inside the worklist panel. */
+/* CT console worklist/upload: keep every control inside the surrounding section. */
 body:has(form[action="/scan"], form[action="/scan/start"]) {
-  max-width: 1100px !important;
+  width: calc(100% - 24px);
+  max-width: 1120px !important;
+}
+.section:has(form[action="/scan"], form[action="/scan/start"]) {
+  overflow-x: auto;
 }
 table:has(form[action="/scan"], form[action="/scan/start"]) {
   width: 100%;
+  max-width: 100%;
+  min-width: 0 !important;
   table-layout: fixed;
 }
 table:has(form[action="/scan"], form[action="/scan/start"]) th,
@@ -87,25 +93,39 @@ table:has(form[action="/scan"], form[action="/scan/start"]) td {
   overflow-wrap: anywhere;
 }
 table:has(form[action="/scan"], form[action="/scan/start"]) th:nth-child(1) { width: 14%; }
-table:has(form[action="/scan"], form[action="/scan/start"]) th:nth-child(2) { width: 28%; }
+table:has(form[action="/scan"], form[action="/scan/start"]) th:nth-child(2) { width: 26%; }
 table:has(form[action="/scan"], form[action="/scan/start"]) th:nth-child(3) { width: 15%; }
 table:has(form[action="/scan"], form[action="/scan/start"]) th:nth-child(4) { width: 14%; }
-table:has(form[action="/scan"], form[action="/scan/start"]) th:nth-child(5) { width: 29%; }
-table:has(form[action="/scan"], form[action="/scan/start"]) td:last-child,
+table:has(form[action="/scan"], form[action="/scan/start"]) th:nth-child(5) { width: 31%; }
+table:has(form[action="/scan"], form[action="/scan/start"]) td:last-child {
+  min-width: 0;
+  padding-right: 10px;
+}
 form[action="/scan"],
 form[action="/scan/start"] {
+  width: 100%;
   min-width: 0;
   max-width: 100%;
+  overflow: hidden;
 }
 form[action="/scan"] input[type="file"] {
   display: block;
   width: 100% !important;
   min-width: 0;
   max-width: 100%;
+  overflow: hidden;
+  font-size: .82rem;
 }
 form[action="/scan"] .dicom-upload-status {
   width: 100%;
+  min-width: 0;
   max-width: 100%;
+  padding: 10px;
+  overflow: hidden;
+}
+form[action="/scan"] .dicom-upload-status__header {
+  flex-wrap: wrap;
+  gap: 6px;
 }
 
 @keyframes learningPanelIn { from { opacity: 0; transform: translateY(7px); } to { opacity: 1; transform: translateY(0); } }
